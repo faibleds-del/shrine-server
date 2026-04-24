@@ -283,6 +283,21 @@
 
     .model-trigger.open .chevron { transform: rotate(180deg); }
 
+    @media (max-width: 600px) {
+      #selectedModelLabel {
+        display: none;
+      }
+      #selectedModelLabel.mobile-label {
+        display: inline;
+      }
+      .model-trigger::after {
+        content: 'GPT';
+        font-size: 12.5px;
+        font-weight: 500;
+        color: rgba(255,255,255,0.88);
+      }
+    }
+
     .model-dropdown {
       position: absolute;
       top: calc(100% + 5px);
@@ -703,6 +718,86 @@
       color: var(--text3);
       font-weight: 400;
     }
+
+    /* ── EDIT MESSAGE ── */
+    .edit-btn {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      border: 0.5px solid var(--border);
+      color: var(--text3);
+      font-size: 10.5px;
+      font-family: 'Sora', sans-serif;
+      cursor: pointer;
+      transition: color 0.12s, background 0.12s;
+      user-select: none;
+      margin-top: 4px;
+    }
+
+    .edit-btn:hover { color: var(--text2); background: rgba(255,255,255,0.09); }
+    .msg-row.user.last-user:hover .edit-btn { display: flex; }
+
+    .edit-textarea {
+      width: 100%;
+      background: var(--bg3);
+      border: 0.5px solid var(--border2);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-family: 'Sora', sans-serif;
+      font-size: 13.5px;
+      color: var(--text);
+      resize: none;
+      outline: none;
+      line-height: 1.55;
+      min-height: 44px;
+    }
+
+    .edit-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      margin-top: 6px;
+    }
+
+    .edit-action-btn {
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-family: 'Sora', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0.5px solid var(--border2);
+      transition: background 0.12s;
+    }
+
+    .edit-action-btn.cancel { background: transparent; color: var(--text2); }
+    .edit-action-btn.cancel:hover { background: rgba(255,255,255,0.06); }
+    .edit-action-btn.send-edit { background: rgba(255,255,255,0.1); color: var(--text); border-color: rgba(255,255,255,0.2); }
+    .edit-action-btn.send-edit:hover { background: rgba(255,255,255,0.15); }
+
+    /* ── DRAG DROP OVERLAY ── */
+    .drag-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.7);
+      border: 2px dashed rgba(255,255,255,0.15);
+      margin: 12px;
+      border-radius: 16px;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .drag-overlay.visible { display: flex; }
+    .drag-overlay-icon { font-size: 40px; opacity: 0.6; }
+    .drag-overlay-text { font-size: 14px; color: var(--text2); font-weight: 500; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
@@ -762,7 +857,7 @@
           <path d="M2 7l3.5 3.5L12 3"/>
         </svg>
       </div>
-      <div class="model-option" data-model="gpt-5.3" onclick="selectModel(this)">
+      <div class="model-option" data-model="gpt-5.3-chat-latest" onclick="selectModel(this)">
         <div class="model-option-left">
           <span class="model-name">GPT 5.3 Instant</span>
           <span class="model-sub">Balanced · Versatile</span>
@@ -771,7 +866,7 @@
           <path d="M2 7l3.5 3.5L12 3"/>
         </svg>
       </div>
-      <div class="model-option" data-model="gpt-5.3" data-reasoning="high" onclick="selectModel(this)">
+      <div class="model-option" data-model="gpt-5.4" data-reasoning="high" onclick="selectModel(this)">
         <div class="model-option-left">
           <span class="model-name">GPT 5.3 Thinking</span>
           <span class="model-sub">Deep · Reasoning</span>
@@ -846,6 +941,12 @@
 
 </div><!-- end main-content -->
 </div><!-- end app-shell -->
+
+<!-- Drag & drop overlay -->
+<div class="drag-overlay" id="dragOverlay">
+  <div class="drag-overlay-icon">📎</div>
+  <div class="drag-overlay-text">Drop to attach</div>
+</div>
 
 <script>
   // ── State ──
@@ -1005,6 +1106,42 @@
     document.getElementById('webSearchToggle').classList.add('checked');
     currentConvoId = 'convo_' + Date.now();
     renderConvoList();
+
+    // ── Paste image from clipboard ──
+    document.getElementById('msgInput').addEventListener('paste', async (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) await handleFiles([file]);
+        }
+      }
+    });
+
+    // ── Drag & drop onto page ──
+    let dragCounter = 0;
+    document.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      document.getElementById('dragOverlay').classList.add('visible');
+    });
+    document.addEventListener('dragleave', () => {
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        document.getElementById('dragOverlay').classList.remove('visible');
+      }
+    });
+    document.addEventListener('dragover', (e) => e.preventDefault());
+    document.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      document.getElementById('dragOverlay').classList.remove('visible');
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) await handleFiles(files);
+    });
   });
 
   // ── Model dropdown ──
@@ -1215,6 +1352,13 @@
       .replace(/\n/g, '<br>');
   }
 
+  function markLastUserMessage() {
+    const area = document.getElementById('messagesArea');
+    area.querySelectorAll('.msg-row.user').forEach(r => r.classList.remove('last-user'));
+    const userRows = area.querySelectorAll('.msg-row.user');
+    if (userRows.length > 0) userRows[userRows.length - 1].classList.add('last-user');
+  }
+
   function appendMessage(role, text, images) {
     const area = document.getElementById('messagesArea');
     const empty = document.getElementById('emptyState');
@@ -1259,10 +1403,163 @@
       bubbleWrap.appendChild(bubble);
     }
 
+    // Edit button for user messages only
+    if (role === 'user' && text) {
+      const editBtn = document.createElement('div');
+      editBtn.className = 'edit-btn';
+      editBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5l2 2L2 10H0V8L6.5 1.5z"/></svg> Edit`;
+      editBtn.onclick = () => startEditMessage(row, text);
+      bubbleWrap.appendChild(editBtn);
+    }
+
     row.appendChild(bubbleWrap);
     area.appendChild(row);
     area.scrollTop = area.scrollHeight;
+    markLastUserMessage();
     return bubbleWrap;
+  }
+
+  function startEditMessage(row, originalText) {
+    const bubbleWrap = row.querySelector('div[style]');
+    const bubble = row.querySelector('.msg-bubble');
+    if (!bubble) return;
+
+    // Replace bubble with textarea
+    const ta = document.createElement('textarea');
+    ta.className = 'edit-textarea';
+    ta.value = originalText;
+    ta.rows = 1;
+    setTimeout(() => {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    }, 0);
+    ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; });
+
+    const actions = document.createElement('div');
+    actions.className = 'edit-actions';
+    actions.innerHTML = `
+      <button class="edit-action-btn cancel">Cancel</button>
+      <button class="edit-action-btn send-edit">Send</button>
+    `;
+
+    actions.querySelector('.cancel').onclick = () => {
+      ta.replaceWith(bubble);
+      actions.remove();
+    };
+
+    actions.querySelector('.send-edit').onclick = () => submitEdit(row, ta.value);
+    ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitEdit(row, ta.value); } });
+
+    bubble.replaceWith(ta);
+    bubbleWrap.appendChild(actions);
+  }
+
+  async function submitEdit(row, newText) {
+    if (!newText.trim() || isLoading) return;
+    const area = document.getElementById('messagesArea');
+
+    // Find index of this user message in conversation
+    const rows = [...area.querySelectorAll('.msg-row')];
+    const rowIndex = rows.indexOf(row);
+
+    // Remove this row and everything after it from DOM
+    rows.slice(rowIndex).forEach(r => r.remove());
+
+    // Find corresponding conversation index — count user/ai rows before this one
+    const msgsBefore = rows.slice(0, rowIndex).filter(r => r.classList.contains('msg-row')).length;
+    conversation = conversation.slice(0, msgsBefore);
+    msgCount = msgsBefore;
+
+    // Re-send with new text
+    conversation.push({ role: 'user', content: newText });
+    const newRow = document.createElement('div');
+    newRow.className = 'msg-row user';
+    const bubbleWrap = document.createElement('div');
+    bubbleWrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;align-items:flex-end;max-width:100%;';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.innerHTML = newText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    const editBtn = document.createElement('div');
+    editBtn.className = 'edit-btn';
+    editBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5l2 2L2 10H0V8L6.5 1.5z"/></svg> Edit`;
+    editBtn.onclick = () => startEditMessage(newRow, newText);
+    bubbleWrap.appendChild(bubble);
+    bubbleWrap.appendChild(editBtn);
+    newRow.appendChild(bubbleWrap);
+    area.appendChild(newRow);
+    markLastUserMessage();
+    area.scrollTop = area.scrollHeight;
+
+    // Fire request
+    isLoading = true;
+    document.getElementById('sendBtn').disabled = true;
+    showTyping();
+
+    let fullReply = '';
+    let streamBubble = null;
+
+    try {
+      const res = await fetch('https://shrine-server-production.up.railway.app/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-shrine-key': 'shrine_xk92mzp4' },
+        body: JSON.stringify({ model: selectedModel, messages: conversation, webSearch: webSearchEnabled, reasoningEffort: selectedReasoningEffort })
+      });
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('event: ')) continue;
+          const eventName = line.slice(7).trim();
+          const dataIdx = lines.indexOf(line) + 1;
+          const dataLine = lines[dataIdx] || '';
+          let payload = {};
+          try { payload = JSON.parse(dataLine.slice(5)); } catch {}
+          if (eventName === 'searching') updateTypingLabel('Searching the web...');
+          if (eventName === 'searched') updateTypingLabel('Generating...');
+          if (eventName === 'thinking') updateTypingLabel('Thinking...');
+          if (eventName === 'delta') {
+            if (!streamBubble) {
+              removeTyping();
+              const streamRow = document.createElement('div');
+              streamRow.className = 'msg-row ai';
+              const avatar = document.createElement('div');
+              avatar.className = 'msg-avatar';
+              avatar.textContent = '⛩️';
+              streamBubble = document.createElement('div');
+              streamBubble.className = 'msg-bubble';
+              streamRow.appendChild(avatar);
+              streamRow.appendChild(streamBubble);
+              area.appendChild(streamRow);
+            }
+            fullReply += payload.text || '';
+            streamBubble.innerHTML = renderMarkdown(fullReply);
+            area.scrollTop = area.scrollHeight;
+          }
+          if (eventName === 'done') {
+            removeTyping();
+            if (fullReply) { conversation.push({ role: 'assistant', content: fullReply }); saveConvo(); }
+          }
+          if (eventName === 'error') { removeTyping(); appendMessage('ai', `⚠️ ${payload.message}`); }
+        }
+      }
+    } catch (err) {
+      removeTyping();
+      appendMessage('ai', `⚠️ ${err.message}`);
+    } finally {
+      isLoading = false;
+      document.getElementById('sendBtn').disabled = false;
+      markLastUserMessage();
+    }
   }
 
   // ── Typing indicator ──
@@ -1278,18 +1575,6 @@
 
     const wrap = document.createElement('div');
     wrap.style.cssText = 'display:flex;flex-direction:column;gap:5px;align-items:flex-start;';
-
-    // Status label
-    let statusText = null;
-    if (selectedReasoningEffort === 'high') statusText = 'Thinking...';
-    else if (webSearchEnabled) statusText = 'Searching the web...';
-
-    if (statusText) {
-      const label = document.createElement('div');
-      label.style.cssText = 'font-size:10.5px;color:rgba(255,255,255,0.28);font-family:\'Sora\',sans-serif;padding:0 2px;letter-spacing:0.01em;';
-      label.textContent = statusText;
-      wrap.appendChild(label);
-    }
 
     const bubble = document.createElement('div');
     bubble.className = 'typing-bubble';
@@ -1318,18 +1603,13 @@
     const text = input.value.trim();
     if (!text && pendingFiles.length === 0) return;
 
-    // Build content for this turn
-    // We store in Chat Completions format internally, server/API handles conversion
     let userContent;
     if (pendingFiles.length > 0) {
       userContent = [];
       if (text) userContent.push({ type: 'text', text });
       pendingFiles.forEach(f => {
         if (f.type === 'image') {
-          userContent.push({
-            type: 'image_url',
-            image_url: { url: `data:${f.mime};base64,${f.base64}` }
-          });
+          userContent.push({ type: 'image_url', image_url: { url: `data:${f.mime};base64,${f.base64}` } });
         } else {
           userContent.push({ type: 'text', text: f.content });
         }
@@ -1350,6 +1630,10 @@
     document.getElementById('sendBtn').disabled = true;
     showTyping();
 
+    let fullReply = '';
+    let streamBubble = null;
+    let streamRow = null;
+
     try {
       const res = await fetch('https://shrine-server-production.up.railway.app/chat', {
         method: 'POST',
@@ -1365,29 +1649,85 @@
         })
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        throw new Error(data.error?.message || `Error ${res.status}`);
+        const err = await res.json();
+        throw new Error(err.error || `Error ${res.status}`);
       }
 
-      // Responses API returns output array, Chat Completions returns choices
-      let reply;
-      if (data.output) {
-        // Responses API format
-        const msgBlock = data.output.find(b => b.type === 'message');
-        reply = msgBlock?.content?.find(c => c.type === 'output_text')?.text || '(no response)';
-        // Store in conversation as assistant message for next turn
-        conversation.push({ role: 'assistant', content: reply });
-      } else {
-        // Chat Completions format
-        reply = data.choices?.[0]?.message?.content || '(no response)';
-        conversation.push({ role: 'assistant', content: reply });
-      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-      removeTyping();
-      appendMessage('ai', reply);
-      saveConvo();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('event: ')) continue;
+          const eventName = line.slice(7).trim();
+          // Next line should be data:
+          const dataIdx = lines.indexOf(line) + 1;
+          const dataLine = lines[dataIdx] || '';
+          let payload = {};
+          try { payload = JSON.parse(dataLine.slice(5)); } catch {}
+
+          if (eventName === 'searching') {
+            updateTypingLabel('Searching the web...');
+          }
+          if (eventName === 'searched') {
+            updateTypingLabel('Generating...');
+          }
+          if (eventName === 'thinking') {
+            updateTypingLabel('Thinking...');
+          }
+          if (eventName === 'delta') {
+            if (!streamBubble) {
+              // First delta — remove typing indicator, create streaming bubble
+              removeTyping();
+              const area = document.getElementById('messagesArea');
+              const empty = document.getElementById('emptyState');
+              if (empty) empty.remove();
+
+              streamRow = document.createElement('div');
+              streamRow.className = 'msg-row ai';
+
+              const avatar = document.createElement('div');
+              avatar.className = 'msg-avatar';
+              avatar.textContent = '⛩️';
+
+              streamBubble = document.createElement('div');
+              streamBubble.className = 'msg-bubble';
+
+              streamRow.appendChild(avatar);
+              streamRow.appendChild(streamBubble);
+              area.appendChild(streamRow);
+            }
+            fullReply += payload.text || '';
+            streamBubble.innerHTML = renderMarkdown(fullReply);
+            const area = document.getElementById('messagesArea');
+            area.scrollTop = area.scrollHeight;
+          }
+          if (eventName === 'error') {
+            removeTyping();
+            appendMessage('ai', `⚠️ ${payload.message}`);
+          }
+          if (eventName === 'done') {
+            removeTyping();
+            if (fullReply) {
+              conversation.push({ role: 'assistant', content: fullReply });
+              msgCount++;
+              if (msgCount === 1) {
+                const words = (text||'').trim().split(' ').slice(0, 4).join(' ');
+                document.getElementById('convoName').textContent = words + ((text||'').split(' ').length > 4 ? '…' : '');
+              }
+              saveConvo();
+            }
+          }
+        }
+      }
 
     } catch (err) {
       removeTyping();
@@ -1396,6 +1736,20 @@
       isLoading = false;
       document.getElementById('sendBtn').disabled = false;
     }
+  }
+
+  function updateTypingLabel(text) {
+    const row = document.getElementById('typingRow');
+    if (!row) return;
+    let label = row.querySelector('.typing-status-label');
+    if (!label) {
+      label = document.createElement('div');
+      label.className = 'typing-status-label';
+      label.style.cssText = 'font-size:10.5px;color:rgba(255,255,255,0.28);font-family:\'Sora\',sans-serif;padding:0 2px;letter-spacing:0.01em;';
+      const wrap = row.querySelector('div[style]');
+      if (wrap) wrap.prepend(label);
+    }
+    label.textContent = text;
   }
 </script>
 </body>
