@@ -1211,6 +1211,7 @@
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/`(.+?)`/g, '<code style="font-family:\'DM Mono\',monospace;background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;font-size:12.5px;">$1</code>')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:rgba(255,255,255,0.6);text-decoration:underline;text-underline-offset:2px;">$1</a>')
       .replace(/\n/g, '<br>');
   }
 
@@ -1275,6 +1276,21 @@
     avatar.className = 'msg-avatar';
     avatar.textContent = '⛩️';
 
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:5px;align-items:flex-start;';
+
+    // Status label
+    let statusText = null;
+    if (selectedReasoningEffort === 'high') statusText = 'Thinking...';
+    else if (webSearchEnabled) statusText = 'Searching the web...';
+
+    if (statusText) {
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:10.5px;color:rgba(255,255,255,0.28);font-family:\'Sora\',sans-serif;padding:0 2px;letter-spacing:0.01em;';
+      label.textContent = statusText;
+      wrap.appendChild(label);
+    }
+
     const bubble = document.createElement('div');
     bubble.className = 'typing-bubble';
     bubble.innerHTML = `
@@ -1283,8 +1299,9 @@
       <div class="typing-dot"></div>
     `;
 
+    wrap.appendChild(bubble);
     row.appendChild(avatar);
-    row.appendChild(bubble);
+    row.appendChild(wrap);
     area.appendChild(row);
     area.scrollTop = area.scrollHeight;
   }
