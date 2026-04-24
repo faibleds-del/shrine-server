@@ -32,6 +32,9 @@
       display: flex;
       flex-direction: column;
       height: 100vh;
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
       overflow: hidden;
     }
 
@@ -429,8 +432,8 @@
     .attachment-preview {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      padding: 0 16px 6px;
+      gap: 8px;
+      padding: 0 16px 8px;
     }
 
     .attachment-chip {
@@ -443,15 +446,52 @@
       border-radius: 8px;
       font-size: 11.5px;
       color: var(--text2);
-      font-family: 'DM Mono', monospace;
+      font-family: 'Sora', sans-serif;
     }
 
-    .chip-remove {
+    .attachment-img-preview {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .attachment-img-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .attachment-img-preview .chip-remove,
+    .attachment-chip .chip-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      color: var(--text3);
-      font-size: 13px;
+      font-size: 11px;
+      color: white;
       line-height: 1;
+    }
+
+    .attachment-chip .chip-remove {
+      position: static;
+      background: transparent;
+      color: var(--text3);
       transition: color 0.12s;
+      font-size: 13px;
+      width: auto;
+      height: auto;
+      border-radius: 0;
     }
 
     .chip-remove:hover { color: var(--text); }
@@ -530,9 +570,6 @@
   <span class="convo-name" id="convoName">New conversation</span>
 </div>
 
-<!-- Attachment preview strip -->
-<div class="attachment-preview" id="attachmentPreview"></div>
-
 <!-- Messages -->
 <div class="messages-area" id="messagesArea">
   <div class="empty-state" id="emptyState">
@@ -540,6 +577,9 @@
     <div class="empty-text">What's on your mind?</div>
   </div>
 </div>
+
+<!-- Attachment preview strip -->
+<div class="attachment-preview" id="attachmentPreview"></div>
 
 <!-- Input -->
 <div class="input-bar">
@@ -769,13 +809,25 @@
     const strip = document.getElementById('attachmentPreview');
     strip.innerHTML = '';
     pendingFiles.forEach((f, i) => {
-      const chip = document.createElement('div');
-      chip.className = 'attachment-chip';
-      chip.innerHTML = `
-        <span>${f.name}</span>
-        <span class="chip-remove" onclick="removeFile(${i})">×</span>
-      `;
-      strip.appendChild(chip);
+      if (f.type === 'image') {
+        // Show thumbnail
+        const wrap = document.createElement('div');
+        wrap.className = 'attachment-img-preview';
+        wrap.innerHTML = `
+          <img src="data:${f.mime};base64,${f.base64}" alt="${f.name}"/>
+          <span class="chip-remove" onclick="removeFile(${i})">×</span>
+        `;
+        strip.appendChild(wrap);
+      } else {
+        // Show file chip
+        const chip = document.createElement('div');
+        chip.className = 'attachment-chip';
+        chip.innerHTML = `
+          <span>${f.name}</span>
+          <span class="chip-remove" onclick="removeFile(${i})">×</span>
+        `;
+        strip.appendChild(chip);
+      }
     });
   }
 
@@ -854,6 +906,7 @@
     if (!text && pendingFiles.length === 0) return;
 
     // Build content for this turn
+    // We store in Chat Completions format internally, server/API handles conversion
     let userContent;
     if (pendingFiles.length > 0) {
       userContent = [];
@@ -865,7 +918,6 @@
             image_url: { url: `data:${f.mime};base64,${f.base64}` }
           });
         } else {
-          // text, pdf extracted text, unsupported label — all injected as text
           userContent.push({ type: 'text', text: f.content });
         }
       });

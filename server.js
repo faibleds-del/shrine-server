@@ -20,6 +20,32 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'shrine.html'));
 });
 
+// Convert Chat Completions message format → Responses API format
+function convertMessagesForResponsesAPI(messages) {
+  return messages.map(msg => {
+    if (typeof msg.content === 'string') {
+      return {
+        role: msg.role,
+        content: [{ type: msg.role === 'assistant' ? 'output_text' : 'input_text', text: msg.content }]
+      };
+    }
+    if (Array.isArray(msg.content)) {
+      return {
+        role: msg.role,
+        content: msg.content.map(c => {
+          if (c.type === 'text') return { type: 'input_text', text: c.text };
+          if (c.type === 'image_url') return {
+            type: 'input_image',
+            source: { type: 'base64', media_type: c.image_url.url.split(';')[0].split(':')[1], data: c.image_url.url.split(',')[1] }
+          };
+          return c;
+        })
+      };
+    }
+    return msg;
+  });
+}
+
 // Main chat route
 app.post('/chat', async (req, res) => {
   const { model, messages, webSearch, reasoningEffort } = req.body;
@@ -28,7 +54,8 @@ app.post('/chat', async (req, res) => {
     let response, data;
 
     if (webSearch) {
-      // ── Responses API (supports web_search_preview with tool_choice auto) ──
+      // Responses API — supports web_search_preview with tool_choice auto
+      const convertedMessages = convertMessagesForResponsesAPI(messages);
       response = await fetch('https://api.openai.com/v1/responses', {
         method: 'POST',
         headers: {
@@ -37,7 +64,7 @@ app.post('/chat', async (req, res) => {
         },
         body: JSON.stringify({
           model: model,
-          input: messages, // Responses API accepts same message format
+          input: convertedMessages,
           tools: [{ type: 'web_search_preview' }],
           tool_choice: 'auto',
           max_output_tokens: 2048,
@@ -45,7 +72,7 @@ app.post('/chat', async (req, res) => {
         })
       });
     } else {
-      // ── Chat Completions API ──
+      // Chat Completions API
       response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -72,3 +99,4 @@ app.post('/chat', async (req, res) => {
 app.listen(process.env.PORT || 3000, () => {
   console.log('Shrine server running');
 });
+
