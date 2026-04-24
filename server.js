@@ -20,7 +20,14 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'shrine.html'));
 });
 
-// Convert Chat Completions message format → Responses API format
+// Check if any message contains an image
+function hasImages(messages) {
+  return messages.some(msg =>
+    Array.isArray(msg.content) && msg.content.some(c => c.type === 'image_url')
+  );
+}
+
+// Convert Chat Completions message format → Responses API format (text only)
 function convertMessagesForResponsesAPI(messages) {
   return messages.map(msg => {
     if (typeof msg.content === 'string') {
@@ -34,10 +41,6 @@ function convertMessagesForResponsesAPI(messages) {
         role: msg.role,
         content: msg.content.map(c => {
           if (c.type === 'text') return { type: 'input_text', text: c.text };
-          if (c.type === 'image_url') return {
-            type: 'input_image',
-            source: { type: 'base64', media_type: c.image_url.url.split(';')[0].split(':')[1], data: c.image_url.url.split(',')[1] }
-          };
           return c;
         })
       };
@@ -50,11 +53,13 @@ function convertMessagesForResponsesAPI(messages) {
 app.post('/chat', async (req, res) => {
   const { model, messages, webSearch, reasoningEffort } = req.body;
 
+  // Use Responses API only when web search is on AND no images in the conversation
+  const useResponsesAPI = webSearch && !hasImages(messages);
+
   try {
     let response, data;
 
-    if (webSearch) {
-      // Responses API — supports web_search_preview with tool_choice auto
+    if (useResponsesAPI) {
       const convertedMessages = convertMessagesForResponsesAPI(messages);
       response = await fetch('https://api.openai.com/v1/responses', {
         method: 'POST',
@@ -72,7 +77,7 @@ app.post('/chat', async (req, res) => {
         })
       });
     } else {
-      // Chat Completions API
+      // Chat Completions — handles images, and text-only when web search is off
       response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
