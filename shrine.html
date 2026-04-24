@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>⛩️ Shrine</title>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
   <style>
@@ -479,7 +479,7 @@
       border: 0.5px solid var(--border2);
       border-radius: 14px;
       background: rgba(255,255,255,0.04);
-      padding: 10px 14px 10px 42px;
+      padding: 10px 70px 10px 42px;
       min-height: 44px;
       transition: border-color 0.15s;
     }
@@ -605,32 +605,6 @@
 
     #msgInput::placeholder { color: var(--text3); }
     #msgInput::-webkit-scrollbar { display: none; }
-
-    .send-btn {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(255,255,255,0.15);
-      background: transparent;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      flex-shrink: 0;
-      color: var(--text2);
-      transition: border-color 0.15s, background 0.15s, color 0.15s;
-      align-self: flex-end;
-    }
-
-    .send-btn:hover {
-      border-color: rgba(255,255,255,0.35);
-      background: rgba(255,255,255,0.06);
-      color: var(--text);
-    }
-
-    .send-btn:disabled {
-      opacity: 0.3;
-      cursor: default;
-    }
 
     /* attachment preview */
     .attachment-preview {
@@ -798,6 +772,338 @@
     .drag-overlay.visible { display: flex; }
     .drag-overlay-icon { font-size: 40px; opacity: 0.6; }
     .drag-overlay-text { font-size: 14px; color: var(--text2); font-weight: 500; }
+
+    /* ── MARKDOWN ── */
+    .md-h1 { font-size: 18px; font-weight: 600; margin: 12px 0 6px; }
+    .md-h2 { font-size: 15px; font-weight: 600; margin: 10px 0 5px; }
+    .md-h3 { font-size: 13.5px; font-weight: 600; margin: 8px 0 4px; }
+    .md-ul, .md-ol { padding-left: 20px; margin: 6px 0; }
+    .md-ul li, .md-ol li { margin: 3px 0; font-size: 13.5px; line-height: 1.6; }
+    .md-link { color: rgba(255,255,255,0.6); text-decoration: underline; text-underline-offset: 2px; }
+    .md-inline-code { font-family: 'DM Mono', monospace; background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+
+    /* ── CODE BLOCKS ── */
+    .code-block {
+      margin: 8px 0;
+      border-radius: 10px;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      overflow: hidden;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 12px;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 0.5px solid rgba(255,255,255,0.06);
+    }
+
+    .code-lang {
+      font-size: 10.5px;
+      font-family: 'DM Mono', monospace;
+      color: rgba(255,255,255,0.3);
+      text-transform: lowercase;
+    }
+
+    .code-copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10.5px;
+      font-family: 'Sora', sans-serif;
+      color: rgba(255,255,255,0.35);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: color 0.12s;
+      padding: 0;
+    }
+
+    .code-copy-btn:hover { color: rgba(255,255,255,0.7); }
+
+    .code-pre {
+      margin: 0;
+      padding: 12px 14px;
+      background: rgba(0,0,0,0.25);
+      overflow-x: auto;
+      font-family: 'DM Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.82);
+      white-space: pre;
+    }
+
+    /* ── TABLES ── */
+    .md-table-wrap { overflow-x: auto; margin: 8px 0; }
+    .md-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    .md-table th { padding: 7px 12px; border-bottom: 0.5px solid rgba(255,255,255,0.15); font-weight: 600; color: var(--text); text-align: left; white-space: nowrap; }
+    .md-table td { padding: 7px 12px; border-bottom: 0.5px solid rgba(255,255,255,0.06); color: var(--text2); }
+    .md-table tr:last-child td { border-bottom: none; }
+
+    /* ── ACTION BUTTONS BELOW AI BUBBLE ── */
+    .msg-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      margin-top: 4px;
+      padding: 0 2px;
+    }
+
+    .msg-row.ai:hover .msg-actions { opacity: 1; }
+
+    .msg-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: transparent;
+      border: 0.5px solid var(--border);
+      color: var(--text3);
+      font-size: 10.5px;
+      font-family: 'Sora', sans-serif;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+
+    .msg-action-btn:hover { background: rgba(255,255,255,0.06); color: var(--text2); border-color: var(--border2); }
+
+    /* ── STOP BUTTON ── */
+    .stop-btn {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.06);
+      border: 0.5px solid var(--border2);
+      color: var(--text2);
+      font-size: 12px;
+      font-family: 'Sora', sans-serif;
+      cursor: pointer;
+      transition: background 0.12s;
+      margin: 0 auto 8px;
+      flex-shrink: 0;
+    }
+
+    .stop-btn.visible { display: flex; }
+    .stop-btn:hover { background: rgba(255,255,255,0.1); }
+
+    /* ── CONVO SEARCH ── */
+    .sidebar-search {
+      padding: 8px 10px;
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .sidebar-search input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-family: 'Sora', sans-serif;
+      font-size: 12px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .sidebar-search input::placeholder { color: var(--text3); }
+    .sidebar-search input:focus { border-color: var(--border2); }
+
+    /* ── SYSTEM PROMPT MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #1e1e1e;
+      border: 0.5px solid var(--border2);
+      border-radius: 16px;
+      padding: 24px;
+      width: 480px;
+      max-width: 90vw;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .modal-desc {
+      font-size: 12px;
+      color: var(--text3);
+      line-height: 1.5;
+    }
+
+    .modal textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid var(--border2);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      resize: none;
+      outline: none;
+      line-height: 1.55;
+      min-height: 100px;
+    }
+
+    .modal textarea:focus { border-color: rgba(255,255,255,0.2); }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .modal-btn {
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-family: 'Sora', sans-serif;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0.5px solid var(--border2);
+      transition: background 0.12s;
+    }
+
+    .modal-btn.cancel { background: transparent; color: var(--text2); }
+    .modal-btn.cancel:hover { background: rgba(255,255,255,0.05); }
+    .modal-btn.save { background: rgba(255,255,255,0.1); color: var(--text); border-color: rgba(255,255,255,0.2); }
+    .modal-btn.save:hover { background: rgba(255,255,255,0.15); }
+
+    /* ── TOPBAR RIGHT ACTIONS ── */
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .topbar-icon-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text3);
+      transition: background 0.12s, color 0.12s;
+      border: none;
+      background: transparent;
+      flex-shrink: 0;
+    }
+
+    .topbar-icon-btn:hover { background: rgba(255,255,255,0.06); color: var(--text2); }
+
+    /* ── VOICE INPUT ── */
+    .voice-inside {
+      position: absolute;
+      right: 42px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 22px; height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text3);
+      transition: color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .voice-inside:hover { color: var(--text2); }
+    .voice-inside.listening { color: #e05555; animation: pulse-ring 1.2s infinite; border-radius: 50%; }
+
+    .send-inside {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: rgba(255,255,255,0.5);
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .send-inside:hover {
+      border-color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+    }
+
+    .send-inside:disabled { opacity: 0.3; cursor: default; }
+
+    @keyframes pulse-ring {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(224,85,85,0.3); }
+      50% { box-shadow: 0 0 0 6px rgba(224,85,85,0); }
+    }
+
+    /* ── TIMESTAMPS ── */
+    .msg-timestamp {
+      font-size: 9.5px;
+      color: rgba(255,255,255,0.18);
+      font-family: 'DM Mono', monospace;
+      padding: 0 2px;
+      margin-top: 2px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .msg-row:hover .msg-timestamp { opacity: 1; }
+
+    /* ── PIN ── */
+    .convo-item.pinned { order: -1; }
+    .convo-item.pinned .convo-item-title::before {
+      content: '📌 ';
+      font-size: 10px;
+    }
+
+    .pin-btn {
+      opacity: 0;
+    }
+
+    .convo-item:hover .pin-btn,
+    .convo-item.pinned .pin-btn { opacity: 1; }
+
+    /* ── MOBILE INPUT FIX ── */
+    @media (max-width: 768px) {
+      .input-bar {
+        padding: 8px 10px 12px;
+        position: sticky;
+        bottom: 0;
+        background: var(--bg);
+      }
+
+      .messages-area {
+        padding-bottom: 8px;
+      }
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
@@ -823,8 +1129,20 @@
       New
     </button>
   </div>
+  <div class="sidebar-search">
+    <input type="text" placeholder="Search conversations..." oninput="filterConvos(this.value)" />
+  </div>
   <div class="convo-list" id="convoList"></div>
-  <div class="sidebar-footer">⚠️ Saved locally — clearing browser data will erase chats</div>
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span>⚠️ Saved locally — clearing browser data will erase chats</span>
+      <div onclick="exportConvo()" title="Export conversation" style="cursor:pointer;color:rgba(255,255,255,0.25);transition:color 0.12s;flex-shrink:0;margin-left:10px;" onmouseover="this.style.color='rgba(255,255,255,0.5)'" onmouseout="this.style.color='rgba(255,255,255,0.25)'">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 1v8M4 6l3 3 3-3M2 11h10v2H2z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Overlay to close sidebar -->
@@ -880,7 +1198,17 @@
   </div><!-- end flex wrapper -->
 
   <span class="shrine-logo">⛩️ shrine</span>
-  <span class="convo-name" id="convoName">New conversation</span>
+  <div class="topbar-actions">
+    <span class="convo-name" id="convoName">New conversation</span>
+    <button class="topbar-icon-btn" onclick="openSystemPrompt()" title="Custom instructions">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="7" cy="7" r="5.5"/>
+        <path d="M4.5 8.5s.8 1.5 2.5 1.5 2.5-1.5 2.5-1.5"/>
+        <circle cx="5" cy="6" r="0.6" fill="currentColor"/>
+        <circle cx="9" cy="6" r="0.6" fill="currentColor"/>
+      </svg>
+    </button>
+  </div>
 </div><!-- end topbar -->
 
 <!-- Messages -->
@@ -893,6 +1221,12 @@
 
 <!-- Attachment preview strip -->
 <div class="attachment-preview" id="attachmentPreview"></div>
+
+<!-- Stop button -->
+<div class="stop-btn" id="stopBtn" onclick="stopGeneration()">
+  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><rect x="1" y="1" width="8" height="8" rx="1.5"/></svg>
+  Stop generating
+</div>
 
 <!-- Input -->
 <div class="input-bar">
@@ -931,12 +1265,18 @@
     </div>
     <input type="file" id="fileInput" multiple accept=".txt,.md,.csv,.json,.pdf,.png,.jpg,.jpeg,.webp,.gif" onchange="handleFiles(this.files)"/>
     <textarea id="msgInput" rows="1" placeholder="message" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <div class="voice-inside" id="voiceBtn" onclick="toggleVoice()" title="Voice input">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4.5" y="1" width="4" height="7" rx="2"/>
+        <path d="M2 7a4.5 4.5 0 009 0M6.5 11.5V13"/>
+      </svg>
+    </div>
+    <button class="send-inside" id="sendBtn" onclick="sendMessage()" title="Send">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6.5 11V2M2 6.5l4.5-4.5 4.5 4.5"/>
+      </svg>
+    </button>
   </div>
-  <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">
-    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M6.5 11V2M2 6.5l4.5-4.5 4.5 4.5"/>
-    </svg>
-  </button>
 </div>
 
 </div><!-- end main-content -->
@@ -946,6 +1286,19 @@
 <div class="drag-overlay" id="dragOverlay">
   <div class="drag-overlay-icon">📎</div>
   <div class="drag-overlay-text">Drop to attach</div>
+</div>
+
+<!-- System Prompt Modal -->
+<div class="modal-overlay" id="systemPromptModal">
+  <div class="modal">
+    <div class="modal-title">Custom Instructions</div>
+    <div class="modal-desc">Tell Shrine how to behave. This applies to all conversations and is sent with every message.</div>
+    <textarea id="systemPromptInput" placeholder="e.g. Always respond concisely. You are a coding assistant. Speak casually." rows="5"></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeSystemPrompt()">Cancel</button>
+      <button class="modal-btn save" onclick="saveSystemPrompt()">Save</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -958,50 +1311,91 @@
   let isLoading = false;
   let msgCount = 0;
   let currentConvoId = null;
+  let systemPrompt = localStorage.getItem('shrine_system_prompt') || '';
+  let abortController = null;
 
-  // ── localStorage helpers ──
-  function getAllConvos() {
-    try { return JSON.parse(localStorage.getItem('shrine_convos') || '{}'); } catch { return {}; }
+  // ── Stop generation ──
+  function stopGeneration() {
+    if (abortController) { abortController.abort(); abortController = null; }
+    document.getElementById('stopBtn').classList.remove('visible');
   }
 
-  function saveConvo() {
-    if (!currentConvoId || conversation.length === 0) return;
-    const convos = getAllConvos();
-    convos[currentConvoId] = {
-      id: currentConvoId,
-      title: document.getElementById('convoName').textContent,
-      messages: conversation,
-      updatedAt: Date.now()
-    };
-    localStorage.setItem('shrine_convos', JSON.stringify(convos));
-    renderConvoList();
+  // ── System prompt modal ──
+  function openSystemPrompt() {
+    document.getElementById('systemPromptInput').value = systemPrompt;
+    document.getElementById('systemPromptModal').classList.add('open');
   }
 
-  function renderConvoList() {
+  function closeSystemPrompt() {
+    document.getElementById('systemPromptModal').classList.remove('open');
+  }
+
+  function saveSystemPrompt() {
+    systemPrompt = document.getElementById('systemPromptInput').value.trim();
+    localStorage.setItem('shrine_system_prompt', systemPrompt);
+    closeSystemPrompt();
+  }
+
+  // ── Export conversation ──
+  function exportConvo() {
+    if (conversation.length === 0) return;
+    const title = document.getElementById('convoName').textContent;
+    let md = `# ${title}\n\n`;
+    conversation.forEach(msg => {
+      if (msg.role === 'user') {
+        const text = typeof msg.content === 'string' ? msg.content : msg.content.filter(c=>c.type==='text').map(c=>c.text).join(' ');
+        md += `**You:** ${text}\n\n`;
+      } else if (msg.role === 'assistant') {
+        md += `**Shrine:** ${typeof msg.content === 'string' ? msg.content : ''}\n\n`;
+      }
+    });
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^a-z0-9]/gi,'_')}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── Convo search ──
+  function filterConvos(query) {
     const convos = getAllConvos();
-    const list = document.getElementById('convoList');
     const sorted = Object.values(convos).sort((a, b) => b.updatedAt - a.updatedAt);
+    const list = document.getElementById('convoList');
+    const q = query.toLowerCase().trim();
+    const filtered = q ? sorted.filter(c => c.title.toLowerCase().includes(q) || (c.messages||[]).some(m => {
+      const t = typeof m.content === 'string' ? m.content : (m.content||[]).filter(x=>x.type==='text').map(x=>x.text).join(' ');
+      return t.toLowerCase().includes(q);
+    })) : sorted;
+    renderConvoListFromData(filtered);
+  }
+
+  function renderConvoListFromData(sorted) {
+    const list = document.getElementById('convoList');
     list.innerHTML = '';
     if (sorted.length === 0) {
-      list.innerHTML = '<div style="padding:16px 10px;font-size:12px;color:rgba(255,255,255,0.2);text-align:center;">No conversations yet</div>';
+      list.innerHTML = '<div style="padding:16px 10px;font-size:12px;color:rgba(255,255,255,0.2);text-align:center;">No conversations</div>';
       return;
     }
-    sorted.forEach(convo => {
+    // Pinned first
+    const pinned = sorted.filter(c => c.pinned);
+    const unpinned = sorted.filter(c => !c.pinned);
+    [...pinned, ...unpinned].forEach(convo => {
       const item = document.createElement('div');
-      item.className = 'convo-item' + (convo.id === currentConvoId ? ' active' : '');
+      item.className = 'convo-item' + (convo.id === currentConvoId ? ' active' : '') + (convo.pinned ? ' pinned' : '');
       item.dataset.id = convo.id;
       item.innerHTML = `
-        <span class="convo-item-title" ondblclick="startRename('${convo.id}')">${convo.title}</span>
+        <span class="convo-item-title" ondblclick="startRename('${convo.id}')">${convo.pinned ? '📌 ' : ''}${convo.title}</span>
         <div class="convo-item-actions">
+          <div class="convo-action-btn pin-btn" title="${convo.pinned ? 'Unpin' : 'Pin'}" onclick="togglePin(event,'${convo.id}')">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 1l4 4-1.5 1.5-1-1L5 8H4L2.5 9.5l-1-1L3 7V6L5.5 3.5l-1-1L6 1z"/></svg>
+          </div>
           <div class="convo-action-btn" title="Rename" onclick="startRename('${convo.id}')">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M7.5 1.5l2 2L3 10H1V8L7.5 1.5z"/>
-            </svg>
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5l2 2L3 10H1V8L7.5 1.5z"/></svg>
           </div>
           <div class="convo-action-btn" title="Delete" onclick="deleteConvo(event,'${convo.id}')">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1.5 3h8M4 3V2h3v1M2.5 3l.5 6.5h5L9 3"/>
-            </svg>
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 3h8M4 3V2h3v1M2.5 3l.5 6.5h5L9 3"/></svg>
           </div>
         </div>
       `;
@@ -1012,6 +1406,36 @@
       });
       list.appendChild(item);
     });
+  }
+
+  // ── localStorage helpers ──
+  function getAllConvos() {
+    try { return JSON.parse(localStorage.getItem('shrine_convos') || '{}'); } catch { return {}; }
+  }
+
+  function saveConvo() {
+    if (!currentConvoId || conversation.length === 0) return;
+    const convos = getAllConvos();
+    const isNew = !convos[currentConvoId];
+    convos[currentConvoId] = {
+      id: currentConvoId,
+      title: document.getElementById('convoName').textContent,
+      messages: conversation,
+      updatedAt: Date.now(),
+      pinned: convos[currentConvoId]?.pinned || false
+    };
+    localStorage.setItem('shrine_convos', JSON.stringify(convos));
+    renderConvoList();
+    // Auto-title after first full exchange
+    if (conversation.length === 2 && conversation[1].role === 'assistant') {
+      autoTitleConvo();
+    }
+  }
+
+  function renderConvoList() {
+    const convos = getAllConvos();
+    const sorted = Object.values(convos).sort((a, b) => b.updatedAt - a.updatedAt);
+    renderConvoListFromData(sorted);
   }
 
   function startRename(id) {
@@ -1141,6 +1565,14 @@
       document.getElementById('dragOverlay').classList.remove('visible');
       const files = e.dataTransfer?.files;
       if (files && files.length > 0) await handleFiles(files);
+    });
+
+    // ── Mobile keyboard scroll fix ──
+    const msgInput = document.getElementById('msgInput');
+    msgInput.addEventListener('focus', () => {
+      setTimeout(() => {
+        msgInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 300);
     });
   });
 
@@ -1343,13 +1775,65 @@
   // ── Render a message bubble ──
   // ── Simple markdown renderer ──
   function renderMarkdown(text) {
-    return text
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    // Escape HTML first
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Code blocks (``` ... ```)
+    html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+      const id = 'cb_' + Math.random().toString(36).slice(2);
+      return `<div class="code-block"><div class="code-header"><span class="code-lang">${lang || 'code'}</span><button class="code-copy-btn" onclick="copyCode('${id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg> Copy</button></div><pre id="${id}" class="code-pre"><code>${code.trim()}</code></pre></div>`;
+    });
+
+    // Tables
+    html = html.replace(/(\|.+\|\n)((?:\|[-: ]+)+\|\n)((?:\|.+\|\n?)*)/g, (_, header, sep, rows) => {
+      const parseRow = r => r.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      const headers = parseRow(header);
+      const aligns = parseRow(sep).map(c => c.startsWith(':') && c.endsWith(':') ? 'center' : c.endsWith(':') ? 'right' : 'left');
+      const headerHtml = headers.map((h, i) => `<th style="text-align:${aligns[i]||'left'}">${h}</th>`).join('');
+      const rowsHtml = rows.trim().split('\n').map(r => {
+        return '<tr>' + parseRow(r).map((c, i) => `<td style="text-align:${aligns[i]||'left'}">${c}</td>`).join('') + '</tr>';
+      }).join('');
+      return `<div class="md-table-wrap"><table class="md-table"><thead><tr>${headerHtml}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+    });
+
+    // Headers
+    html = html.replace(/^### (.+)$/gm, '<h3 class="md-h3">$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2 class="md-h2">$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1 class="md-h1">$1</h1>');
+
+    // Unordered lists
+    html = html.replace(/((?:^[-*] .+\n?)+)/gm, match => {
+      const items = match.trim().split('\n').map(l => `<li>${l.replace(/^[-*] /, '')}</li>`).join('');
+      return `<ul class="md-ul">${items}</ul>`;
+    });
+
+    // Ordered lists
+    html = html.replace(/((?:^\d+\. .+\n?)+)/gm, match => {
+      const items = match.trim().split('\n').map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`).join('');
+      return `<ol class="md-ol">${items}</ol>`;
+    });
+
+    // Inline
+    html = html
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/`(.+?)`/g, '<code style="font-family:\'DM Mono\',monospace;background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;font-size:12.5px;">$1</code>')
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:rgba(255,255,255,0.6);text-decoration:underline;text-underline-offset:2px;">$1</a>')
+      .replace(/`(.+?)`/g, '<code class="md-inline-code">$1</code>')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="md-link">$1</a>')
       .replace(/\n/g, '<br>');
+
+    return html;
+  }
+
+  function copyCode(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    navigator.clipboard.writeText(el.textContent).then(() => {
+      const btn = el.closest('.code-block')?.querySelector('.code-copy-btn');
+      if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 001 1h2"/></svg> Copy', 2000); }
+    });
   }
 
   function markLastUserMessage() {
@@ -1401,6 +1885,23 @@
       bubble.className = 'msg-bubble';
       bubble.innerHTML = role === 'ai' ? renderMarkdown(text) : text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
       bubbleWrap.appendChild(bubble);
+
+      // Action buttons for AI messages
+      if (role === 'ai') {
+        const actions = document.createElement('div');
+        actions.className = 'msg-actions';
+        actions.innerHTML = `
+          <button class="msg-action-btn" onclick="copyMsg(this)" title="Copy">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg>
+            Copy
+          </button>
+          <button class="msg-action-btn" onclick="regenerateMsg(this)" title="Regenerate">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2a6 6 0 11-1.5 8.5"/><path d="M10 6V2h-4"/></svg>
+            Regenerate
+          </button>
+        `;
+        bubbleWrap.appendChild(actions);
+      }
     }
 
     // Edit button for user messages only
@@ -1411,6 +1912,12 @@
       editBtn.onclick = () => startEditMessage(row, text);
       bubbleWrap.appendChild(editBtn);
     }
+
+    // Timestamp
+    const ts = document.createElement('div');
+    ts.className = 'msg-timestamp';
+    ts.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    bubbleWrap.appendChild(ts);
 
     row.appendChild(bubbleWrap);
     area.appendChild(row);
@@ -1579,6 +2086,195 @@
     }
   }
 
+  function copyMsg(btn) {
+    const bubble = btn.closest('.msg-row')?.querySelector('.msg-bubble');
+    if (!bubble) return;
+    navigator.clipboard.writeText(bubble.innerText).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg> Copy', 2000);
+    });
+  }
+
+  async function regenerateMsg(btn) {
+    if (isLoading) return;
+    // Remove last assistant message from conversation and DOM
+    if (conversation.length > 0 && conversation[conversation.length - 1].role === 'assistant') {
+      conversation.pop();
+    }
+    const area = document.getElementById('messagesArea');
+    const aiRows = area.querySelectorAll('.msg-row.ai');
+    if (aiRows.length > 0) aiRows[aiRows.length - 1].remove();
+
+    // Re-send
+    isLoading = true;
+    document.getElementById('sendBtn').disabled = true;
+    document.getElementById('stopBtn').classList.add('visible');
+    showTyping();
+
+    let fullReply = '';
+    let streamBubble = null;
+    abortController = new AbortController();
+
+    try {
+      const res = await fetch('https://shrine-server-production.up.railway.app/chat', {
+        method: 'POST',
+        signal: abortController.signal,
+        headers: { 'Content-Type': 'application/json', 'x-shrine-key': 'shrine_xk92mzp4' },
+        body: JSON.stringify({ model: selectedModel, messages: buildMessages(), webSearch: webSearchEnabled, reasoningEffort: selectedReasoningEffort })
+      });
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      const process = (chunk) => {
+        buffer += chunk;
+        const parts = buffer.split('\n\n'); buffer = parts.pop();
+        for (const block of parts) {
+          const blines = block.split('\n');
+          let ev = '', ds = '';
+          for (const bl of blines) { if (bl.startsWith('event: ')) ev = bl.slice(7).trim(); else if (bl.startsWith('data: ')) ds = bl.slice(6).trim(); }
+          if (!ev) continue;
+          let p = {}; try { p = JSON.parse(ds); } catch {}
+          if (ev === 'searching') updateTypingLabel('Searching the web...');
+          if (ev === 'searched') updateTypingLabel('Generating...');
+          if (ev === 'thinking') updateTypingLabel('Thinking...');
+          if (ev === 'delta') {
+            if (!streamBubble) {
+              removeTyping();
+              const row = document.createElement('div'); row.className = 'msg-row ai';
+              const av = document.createElement('div'); av.className = 'msg-avatar'; av.textContent = '⛩️';
+              streamBubble = document.createElement('div'); streamBubble.className = 'msg-bubble';
+              row.appendChild(av); row.appendChild(streamBubble); area.appendChild(row);
+            }
+            fullReply += p.text || '';
+            streamBubble.innerHTML = renderMarkdown(fullReply);
+            area.scrollTop = 99999;
+          }
+          if (ev === 'done') { removeTyping(); if (fullReply) { conversation.push({ role: 'assistant', content: fullReply }); saveConvo(); } }
+          if (ev === 'error') { removeTyping(); appendMessage('ai', `⚠️ ${p.message}`); }
+        }
+      };
+      while (true) { const { done, value } = await reader.read(); if (done) break; process(decoder.decode(value, { stream: true })); }
+    } catch (err) {
+      if (err.name !== 'AbortError') { removeTyping(); appendMessage('ai', `⚠️ ${err.message}`); }
+      else removeTyping();
+    } finally {
+      isLoading = false;
+      document.getElementById('sendBtn').disabled = false;
+      document.getElementById('stopBtn').classList.remove('visible');
+      abortController = null;
+    }
+  }
+
+  // Build messages array including system prompt
+  function buildMessages() {
+    if (!systemPrompt) return conversation;
+    return [{ role: 'system', content: systemPrompt }, ...conversation];
+  }
+
+  function togglePin(e, id) {
+    e.stopPropagation();
+    const convos = getAllConvos();
+    if (convos[id]) {
+      convos[id].pinned = !convos[id].pinned;
+      localStorage.setItem('shrine_convos', JSON.stringify(convos));
+      renderConvoList();
+    }
+  }
+
+  // ── Auto-title after first exchange ──
+  async function autoTitleConvo() {
+    if (conversation.length < 2) return;
+    try {
+      const res = await fetch('https://shrine-server-production.up.railway.app/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-shrine-key': 'shrine_xk92mzp4' },
+        body: JSON.stringify({
+          model: 'gpt-5.4-nano',
+          messages: [
+            ...conversation.slice(0, 2),
+            { role: 'user', content: 'Give this conversation a short title of 4-6 words. Reply with ONLY the title, no punctuation, no quotes.' }
+          ],
+          webSearch: false,
+          reasoningEffort: null
+        })
+      });
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '', title = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n'); buffer = parts.pop();
+        for (const block of parts) {
+          const blines = block.split('\n');
+          let ev = '', ds = '';
+          for (const bl of blines) { if (bl.startsWith('event: ')) ev = bl.slice(7).trim(); else if (bl.startsWith('data: ')) ds = bl.slice(6).trim(); }
+          if (ev === 'delta') { let p = {}; try { p = JSON.parse(ds); } catch {} title += p.text || ''; }
+          if (ev === 'done') {
+            const clean = title.trim().replace(/^["']|["']$/g, '');
+            if (clean) {
+              document.getElementById('convoName').textContent = clean;
+              saveConvo();
+            }
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // ── Voice input ──
+  let recognition = null;
+  let isListening = false;
+
+  function toggleVoice() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Voice input is not supported in this browser. Try Chrome.');
+      return;
+    }
+    if (isListening) {
+      recognition?.stop();
+      return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    const btn = document.getElementById('voiceBtn');    const input = document.getElementById('msgInput');
+    const originalPlaceholder = input.placeholder;
+
+    recognition.onstart = () => {
+      isListening = true;
+      btn.classList.add('listening');
+      input.placeholder = 'Listening...';
+    };
+
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+      input.value = transcript;
+      autoResize(input);
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      btn.classList.remove('listening');
+      input.placeholder = originalPlaceholder;
+      recognition = null;
+    };
+
+    recognition.onerror = () => {
+      isListening = false;
+      btn.classList.remove('listening');
+      input.placeholder = originalPlaceholder;
+      recognition = null;
+    };
+
+    recognition.start();
+  }
+
   // ── Typing indicator ──
   function showTyping() {
     const area = document.getElementById('messagesArea');
@@ -1645,22 +2341,25 @@
 
     isLoading = true;
     document.getElementById('sendBtn').disabled = true;
+    document.getElementById('stopBtn').classList.add('visible');
     showTyping();
 
     let fullReply = '';
     let streamBubble = null;
     let streamRow = null;
+    abortController = new AbortController();
 
     try {
       const res = await fetch('https://shrine-server-production.up.railway.app/chat', {
         method: 'POST',
+        signal: abortController.signal,
         headers: {
           'Content-Type': 'application/json',
           'x-shrine-key': 'shrine_xk92mzp4'
         },
         body: JSON.stringify({
           model: selectedModel,
-          messages: conversation,
+          messages: buildMessages(),
           webSearch: webSearchEnabled,
           reasoningEffort: selectedReasoningEffort
         })
@@ -1726,11 +2425,13 @@
       }
 
     } catch (err) {
-      removeTyping();
-      appendMessage('ai', `⚠️ ${err.message}`);
+      if (err.name !== 'AbortError') { removeTyping(); appendMessage('ai', `⚠️ ${err.message}`); }
+      else removeTyping();
     } finally {
       isLoading = false;
       document.getElementById('sendBtn').disabled = false;
+      document.getElementById('stopBtn').classList.remove('visible');
+      abortController = null;
     }
   }
 
