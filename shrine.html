@@ -894,9 +894,8 @@
         body: JSON.stringify({
           model: selectedModel,
           messages: conversation,
-          max_tokens: 2048,
-          ...(selectedReasoningEffort ? { reasoning_effort: selectedReasoningEffort } : {}),
-          ...(webSearchEnabled ? { tools: [{ type: 'web_search_preview' }], tool_choice: 'auto' } : {})
+          webSearch: webSearchEnabled,
+          reasoningEffort: selectedReasoningEffort
         })
       });
 
@@ -906,8 +905,20 @@
         throw new Error(data.error?.message || `Error ${res.status}`);
       }
 
-      const reply = data.choices[0].message.content;
-      conversation.push({ role: 'assistant', content: reply });
+      // Responses API returns output array, Chat Completions returns choices
+      let reply;
+      if (data.output) {
+        // Responses API format
+        const msgBlock = data.output.find(b => b.type === 'message');
+        reply = msgBlock?.content?.find(c => c.type === 'output_text')?.text || '(no response)';
+        // Store in conversation as assistant message for next turn
+        conversation.push({ role: 'assistant', content: reply });
+      } else {
+        // Chat Completions format
+        reply = data.choices?.[0]?.message?.content || '(no response)';
+        conversation.push({ role: 'assistant', content: reply });
+      }
+
       removeTyping();
       appendMessage('ai', reply);
 

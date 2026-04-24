@@ -6,9 +6,9 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Simple secret check
+// Secret check — allow / without key
 app.use((req, res, next) => {
-  if (req.path === '/') return next(); // allow serving the HTML
+  if (req.path === '/') return next();
   if (req.headers['x-shrine-key'] !== process.env.SHRINE_SECRET) {
     return res.status(403).json({ error: 'Unauthorized' });
   }
@@ -20,19 +20,50 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'shrine.html'));
 });
 
-// Proxy to OpenAI
+// Main chat route
 app.post('/chat', async (req, res) => {
+  const { model, messages, webSearch, reasoningEffort } = req.body;
+
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    res.json(data);
+    let response, data;
+
+    if (webSearch) {
+      // ── Responses API (supports web_search_preview with tool_choice auto) ──
+      response = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: model,
+          input: messages, // Responses API accepts same message format
+          tools: [{ type: 'web_search_preview' }],
+          tool_choice: 'auto',
+          max_output_tokens: 2048,
+          ...(reasoningEffort ? { reasoning: { effort: reasoningEffort } } : {})
+        })
+      });
+    } else {
+      // ── Chat Completions API ──
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: messages,
+          max_completion_tokens: 2048,
+          ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {})
+        })
+      });
+    }
+
+    data = await response.json();
+    res.status(response.status).json(data);
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
