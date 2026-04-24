@@ -837,15 +837,25 @@
   }
 
   // ── Render a message bubble ──
-  function appendMessage(role, text) {
+  // ── Simple markdown renderer ──
+  function renderMarkdown(text) {
+    return text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code style="font-family:\'DM Mono\',monospace;background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;font-size:12.5px;">$1</code>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function appendMessage(role, text, images) {
     const area = document.getElementById('messagesArea');
     const empty = document.getElementById('emptyState');
     if (empty) empty.remove();
 
     msgCount++;
     if (msgCount === 1) {
-      const words = text.trim().split(' ').slice(0, 4).join(' ');
-      document.getElementById('convoName').textContent = words + (text.split(' ').length > 4 ? '…' : '');
+      const words = (text||'').trim().split(' ').slice(0, 4).join(' ');
+      document.getElementById('convoName').textContent = words + ((text||'').split(' ').length > 4 ? '…' : '');
     }
 
     const row = document.createElement('div');
@@ -858,14 +868,33 @@
       row.appendChild(avatar);
     }
 
-    const bubble = document.createElement('div');
-    bubble.className = 'msg-bubble';
-    bubble.textContent = text;
+    const bubbleWrap = document.createElement('div');
+    bubbleWrap.style.cssText = `display:flex;flex-direction:column;gap:6px;align-items:${role === 'user' ? 'flex-end' : 'flex-start'};max-width:100%;`;
 
-    row.appendChild(bubble);
+    // Image previews above bubble
+    if (images && images.length > 0) {
+      const imgRow = document.createElement('div');
+      imgRow.style.cssText = `display:flex;gap:6px;flex-wrap:wrap;justify-content:${role === 'user' ? 'flex-end' : 'flex-start'}`;
+      images.forEach(img => {
+        const thumb = document.createElement('img');
+        thumb.src = `data:${img.mime};base64,${img.base64}`;
+        thumb.style.cssText = 'width:120px;height:90px;object-fit:cover;border-radius:10px;border:0.5px solid rgba(255,255,255,0.08);';
+        imgRow.appendChild(thumb);
+      });
+      bubbleWrap.appendChild(imgRow);
+    }
+
+    if (text) {
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+      bubble.innerHTML = role === 'ai' ? renderMarkdown(text) : text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+      bubbleWrap.appendChild(bubble);
+    }
+
+    row.appendChild(bubbleWrap);
     area.appendChild(row);
     area.scrollTop = area.scrollHeight;
-    return bubble;
+    return bubbleWrap;
   }
 
   // ── Typing indicator ──
@@ -925,7 +954,8 @@
       userContent = text;
     }
 
-    appendMessage('user', text || `[${pendingFiles.map(f => f.name).join(', ')}]`);
+    const sentImages = pendingFiles.filter(f => f.type === 'image');
+    appendMessage('user', text || null, sentImages.length > 0 ? sentImages : null);
     conversation.push({ role: 'user', content: userContent });
     pendingFiles = [];
     renderAttachmentChips();
