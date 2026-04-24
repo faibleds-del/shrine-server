@@ -73,7 +73,7 @@ app.post('/chat', async (req, res) => {
           tools: [{ type: 'web_search_preview' }],
           tool_choice: 'auto',
           stream: true,
-          max_output_tokens: 2048,
+          max_output_tokens: 1024,
           ...(reasoningEffort ? { reasoning: { effort: reasoningEffort } } : {})
         })
       });
@@ -116,7 +116,7 @@ app.post('/chat', async (req, res) => {
           model,
           messages,
           stream: true,
-          max_completion_tokens: 2048,
+          max_completion_tokens: 1024,
           ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {})
         })
       });

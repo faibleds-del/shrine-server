@@ -2168,8 +2168,10 @@
 
   // Build messages array including system prompt
   function buildMessages() {
-    if (!systemPrompt) return conversation;
-    return [{ role: 'system', content: systemPrompt }, ...conversation];
+    // Sliding window — keep last 12 messages to prevent input token blowout
+    const window = conversation.slice(-12);
+    if (!systemPrompt) return window;
+    return [{ role: 'system', content: systemPrompt }, ...window];
   }
 
   function togglePin(e, id) {
