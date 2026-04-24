@@ -1511,19 +1511,22 @@
       const decoder = new TextDecoder();
       let buffer = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-        for (const line of lines) {
-          if (!line.startsWith('event: ')) continue;
-          const eventName = line.slice(7).trim();
-          const dataIdx = lines.indexOf(line) + 1;
-          const dataLine = lines[dataIdx] || '';
+      const processSSEChunk = (chunk) => {
+        buffer += chunk;
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop(); // keep incomplete block
+        for (const block of parts) {
+          const lines = block.split('\n');
+          let eventName = '';
+          let dataStr = '';
+          for (const line of lines) {
+            if (line.startsWith('event: ')) eventName = line.slice(7).trim();
+            else if (line.startsWith('data: ')) dataStr = line.slice(6).trim();
+          }
+          if (!eventName) continue;
           let payload = {};
-          try { payload = JSON.parse(dataLine.slice(5)); } catch {}
+          try { payload = JSON.parse(dataStr); } catch {}
+
           if (eventName === 'searching') updateTypingLabel('Searching the web...');
           if (eventName === 'searched') updateTypingLabel('Generating...');
           if (eventName === 'thinking') updateTypingLabel('Thinking...');
@@ -1547,10 +1550,24 @@
           }
           if (eventName === 'done') {
             removeTyping();
-            if (fullReply) { conversation.push({ role: 'assistant', content: fullReply }); saveConvo(); }
+            if (fullReply) {
+              conversation.push({ role: 'assistant', content: fullReply });
+              msgCount++;
+              if (msgCount === 1) {
+                const words = (text||'').trim().split(' ').slice(0, 4).join(' ');
+                document.getElementById('convoName').textContent = words + ((text||'').split(' ').length > 4 ? '…' : '');
+              }
+              saveConvo();
+            }
           }
           if (eventName === 'error') { removeTyping(); appendMessage('ai', `⚠️ ${payload.message}`); }
         }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        processSSEChunk(decoder.decode(value, { stream: true }));
       }
     } catch (err) {
       removeTyping();
@@ -1658,75 +1675,54 @@
       const decoder = new TextDecoder();
       let buffer = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-
-        for (const line of lines) {
-          if (!line.startsWith('event: ')) continue;
-          const eventName = line.slice(7).trim();
-          // Next line should be data:
-          const dataIdx = lines.indexOf(line) + 1;
-          const dataLine = lines[dataIdx] || '';
+      const processChunk = (chunk) => {
+        buffer += chunk;
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop();
+        for (const block of parts) {
+          const blines = block.split('\n');
+          let eventName = '', dataStr = '';
+          for (const bl of blines) {
+            if (bl.startsWith('event: ')) eventName = bl.slice(7).trim();
+            else if (bl.startsWith('data: ')) dataStr = bl.slice(6).trim();
+          }
+          if (!eventName) continue;
           let payload = {};
-          try { payload = JSON.parse(dataLine.slice(5)); } catch {}
-
-          if (eventName === 'searching') {
-            updateTypingLabel('Searching the web...');
-          }
-          if (eventName === 'searched') {
-            updateTypingLabel('Generating...');
-          }
-          if (eventName === 'thinking') {
-            updateTypingLabel('Thinking...');
-          }
+          try { payload = JSON.parse(dataStr); } catch {}
+          if (eventName === 'searching') updateTypingLabel('Searching the web...');
+          if (eventName === 'searched') updateTypingLabel('Generating...');
+          if (eventName === 'thinking') updateTypingLabel('Thinking...');
           if (eventName === 'delta') {
             if (!streamBubble) {
-              // First delta — remove typing indicator, create streaming bubble
               removeTyping();
-              const area = document.getElementById('messagesArea');
-              const empty = document.getElementById('emptyState');
-              if (empty) empty.remove();
-
+              const editArea = document.getElementById('messagesArea');
               streamRow = document.createElement('div');
               streamRow.className = 'msg-row ai';
-
               const avatar = document.createElement('div');
               avatar.className = 'msg-avatar';
               avatar.textContent = '⛩️';
-
               streamBubble = document.createElement('div');
               streamBubble.className = 'msg-bubble';
-
               streamRow.appendChild(avatar);
               streamRow.appendChild(streamBubble);
-              area.appendChild(streamRow);
+              editArea.appendChild(streamRow);
             }
             fullReply += payload.text || '';
             streamBubble.innerHTML = renderMarkdown(fullReply);
-            const area = document.getElementById('messagesArea');
-            area.scrollTop = area.scrollHeight;
+            document.getElementById('messagesArea').scrollTop = 99999;
           }
-          if (eventName === 'error') {
-            removeTyping();
-            appendMessage('ai', `⚠️ ${payload.message}`);
-          }
+          if (eventName === 'error') { removeTyping(); appendMessage('ai', `⚠️ ${payload.message}`); }
           if (eventName === 'done') {
             removeTyping();
-            if (fullReply) {
-              conversation.push({ role: 'assistant', content: fullReply });
-              msgCount++;
-              if (msgCount === 1) {
-                const words = (text||'').trim().split(' ').slice(0, 4).join(' ');
-                document.getElementById('convoName').textContent = words + ((text||'').split(' ').length > 4 ? '…' : '');
-              }
-              saveConvo();
-            }
+            if (fullReply) { conversation.push({ role: 'assistant', content: fullReply }); saveConvo(); }
           }
         }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        processChunk(decoder.decode(value, { stream: true }));
       }
 
     } catch (err) {
