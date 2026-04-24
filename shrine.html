@@ -484,13 +484,7 @@
 </head>
 <body>
 
-<!-- ══════════════════════════════════════
-     🔑 PASTE YOUR OPENAI API KEY BELOW
-     ══════════════════════════════════════ -->
-<script>
-  const OPENAI_API_KEY = ";
-</script>
-<!-- ══════════════════════════════════════ -->
+
 
 <div class="topbar">
   <!-- Model Selector -->
@@ -859,11 +853,6 @@
     const text = input.value.trim();
     if (!text && pendingFiles.length === 0) return;
 
-    if (!OPENAI_API_KEY || OPENAI_API_KEY === "YOUR_API_KEY_HERE") {
-      appendMessage('ai', '⚠️ No API key set. Open shrine.html and paste your OpenAI key at the top.');
-      return;
-    }
-
     // Build content for this turn
     let userContent;
     if (pendingFiles.length > 0) {
@@ -896,11 +885,11 @@
     showTyping();
 
     try {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      const res = await fetch('https://shrine-server-production.up.railway.app/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
+          'x-shrine-key': 'shrine_xk92mzp4'
         },
         body: JSON.stringify({
           model: selectedModel,
