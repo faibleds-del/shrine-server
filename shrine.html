@@ -3019,18 +3019,29 @@
       const processSSEChunk = (chunk) => {
         buffer += chunk;
         const parts = buffer.split('\n\n');
-        buffer = parts.pop(); // keep incomplete block
+        buffer = parts.pop();
         for (const block of parts) {
+          if (!block.trim()) continue;
           const lines = block.split('\n');
           let eventName = '';
           let dataStr = '';
           for (const line of lines) {
-            if (line.startsWith('event: ')) eventName = line.slice(7).trim();
-            else if (line.startsWith('data: ')) dataStr = line.slice(6).trim();
+            if (line.startsWith('event: ')) {
+              // If we already have a pending event, dispatch it first
+              if (eventName) dispatchSSE(eventName, dataStr);
+              eventName = line.slice(7).trim();
+              dataStr = '';
+            } else if (line.startsWith('data: ')) {
+              dataStr = line.slice(6).trim();
+            }
           }
-          if (!eventName) continue;
-          let payload = {};
-          try { payload = JSON.parse(dataStr); } catch {}
+          if (eventName) dispatchSSE(eventName, dataStr);
+        }
+      };
+
+      const dispatchSSE = (eventName, dataStr) => {
+        let payload = {};
+        try { payload = JSON.parse(dataStr); } catch {}
 
           if (eventName === 'searching') updateTypingLabel('Searching the web...');
           if (eventName === 'searched') updateTypingLabel('Generating...');
@@ -3068,8 +3079,7 @@
           if (eventName === 'error') { removeTyping(); appendMessage('ai', `⚠️ ${payload.message}`); }
           if (eventName === 'usage') updateUsageCounter(payload.used, payload.limit);
           if (eventName === 'limit') { removeTyping(); openUpgradeModal(); }
-        }
-      };
+      }; // end dispatchSSE
 
       while (true) {
         const { done, value } = await reader.read();
