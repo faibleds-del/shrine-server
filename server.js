@@ -13,7 +13,7 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
-// ── Daily usage (stored in codes table via usage_date + usage_count) ──
+// ── Daily usage (stored in codes table via usage_data + usage_count) ──
 const TIER_LIMITS = { casual: 20, active: 40, heavy: 80 };
 const ADMIN_KEY = 'k3F9xLm2Qa7pZ8vT';
 
@@ -33,29 +33,29 @@ async function validateCode(code) {
 async function checkAndIncrement(code, tier) {
   const today = new Date().toISOString().split('T')[0];
   const limit = TIER_LIMITS[tier] || 20;
-  const { data } = await supabase.from('codes').select('usage_date, usage_count').eq('code', code).single();
+  const { data } = await supabase.from('codes').select('usage_data, usage_count').eq('code', code).single();
 
-  const currentCount = (data?.usage_date === today) ? (data.usage_count || 0) : 0;
+  const currentCount = (data?.usage_data === today) ? (data.usage_count || 0) : 0;
   if (currentCount >= limit) return { allowed: false, used: currentCount, limit };
 
   const newCount = currentCount + 1;
-  await supabase.from('codes').update({ usage_date: today, usage_count: newCount }).eq('code', code);
+  await supabase.from('codes').update({ usage_data: today, usage_count: newCount }).eq('code', code);
   return { allowed: true, used: newCount, limit };
 }
 
 async function checkDailyLimit(code, tier) {
   const today = new Date().toISOString().split('T')[0];
   const limit = TIER_LIMITS[tier] || 20;
-  const { data } = await supabase.from('codes').select('usage_date, usage_count').eq('code', code).single();
-  if (!data || data.usage_date !== today) return { allowed: true, used: 0, limit };
+  const { data } = await supabase.from('codes').select('usage_data, usage_count').eq('code', code).single();
+  if (!data || data.usage_data !== today) return { allowed: true, used: 0, limit };
   if (data.usage_count >= limit) return { allowed: false, used: data.usage_count, limit };
   return { allowed: true, used: data.usage_count, limit };
 }
 
 async function getUsageCount(code) {
   const today = new Date().toISOString().split('T')[0];
-  const { data } = await supabase.from('codes').select('usage_date, usage_count').eq('code', code).single();
-  if (!data || data.usage_date !== today) return 0;
+  const { data } = await supabase.from('codes').select('usage_data, usage_count').eq('code', code).single();
+  if (!data || data.usage_data !== today) return 0;
   return data.usage_count || 0;
 }
 
@@ -93,7 +93,7 @@ app.get('/admin/codes', requireAdmin, async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   res.json(data.map(c => ({
     ...c,
-    todayUsage: c.usage_date === today ? (c.usage_count || 0) : 0,
+    todayUsage: c.usage_data === today ? (c.usage_count || 0) : 0,
     limit: TIER_LIMITS[c.tier] || 20
   })));
 });
@@ -129,7 +129,7 @@ app.delete('/admin/codes/:code', requireAdmin, async (req, res) => {
 // ── Admin: reset daily usage ──
 app.post('/admin/reset/:code', requireAdmin, async (req, res) => {
   const code = req.params.code.toUpperCase();
-  await supabase.from('codes').update({ usage_date: null, usage_count: 0 }).eq('code', code);
+  await supabase.from('codes').update({ usage_data: null, usage_count: 0 }).eq('code', code);
   res.json({ success: true });
 });
 
