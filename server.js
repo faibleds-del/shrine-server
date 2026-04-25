@@ -215,7 +215,12 @@ app.post('/chat', async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
 
-  sse(res, 'usage', { used: usage.used + (isAdmin ? 0 : 1), limit: usage.limit });
+  const usagePayload = { used: usage.used, limit: usage.limit };
+  let usageSent = false;
+
+  function sendUsageOnce() {
+    if (!usageSent) { usageSent = true; sse(res, 'usage', usagePayload); }
+  }
 
   try {
     if (useResponsesAPI) {
@@ -234,6 +239,7 @@ app.post('/chat', async (req, res) => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      sendUsageOnce();
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -268,6 +274,7 @@ app.post('/chat', async (req, res) => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      sendUsageOnce();
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
