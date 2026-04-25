@@ -773,6 +773,326 @@
     .drag-overlay-icon { font-size: 40px; opacity: 0.6; }
     .drag-overlay-text { font-size: 14px; color: var(--text2); font-weight: 500; }
 
+    /* ── LOGIN SCREEN ── */
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      gap: 24px;
+    }
+
+    .login-screen.hidden { display: none; }
+
+    .login-logo {
+      font-size: 48px;
+      line-height: 1;
+    }
+
+    .login-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.03em;
+    }
+
+    .login-subtitle {
+      font-size: 13px;
+      color: var(--text3);
+      text-align: center;
+      max-width: 280px;
+      line-height: 1.5;
+    }
+
+    .login-box {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 300px;
+    }
+
+    .login-input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 0.5px solid var(--border2);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      text-align: center;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: border-color 0.15s;
+    }
+
+    .login-input::placeholder {
+      color: var(--text3);
+      letter-spacing: 0.05em;
+      text-transform: none;
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+    }
+
+    .login-input:focus { border-color: rgba(255,255,255,0.25); }
+    .login-input.error { border-color: #e05555; }
+
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+      border: 0.5px solid rgba(255,255,255,0.15);
+      color: var(--text);
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .login-btn:hover { background: rgba(255,255,255,0.15); }
+    .login-btn:disabled { opacity: 0.4; cursor: default; }
+
+    .login-error {
+      font-size: 12px;
+      color: #e05555;
+      text-align: center;
+      min-height: 16px;
+    }
+
+    /* ── USAGE COUNTER ── */
+    .usage-counter {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 0.5px solid var(--border);
+      background: transparent;
+      white-space: nowrap;
+    }
+
+    .usage-counter.warning { color: #e0a855; border-color: rgba(224,168,85,0.3); }
+    .usage-counter.danger { color: #e05555; border-color: rgba(224,85,85,0.3); }
+
+    /* ── ADMIN PANEL ── */
+    .admin-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 900;
+      display: none;
+      flex-direction: column;
+    }
+
+    .admin-screen.open { display: flex; }
+
+    .admin-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .admin-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .admin-badge {
+      font-size: 9.5px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: rgba(255,200,0,0.12);
+      border: 0.5px solid rgba(255,200,0,0.25);
+      color: rgba(255,200,0,0.8);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .admin-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .admin-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 8px;
+    }
+
+    .admin-create {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .admin-input {
+      flex: 1;
+      min-width: 120px;
+      background: rgba(255,255,255,0.05);
+      border: 0.5px solid var(--border2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: 'Sora', sans-serif;
+      font-size: 12.5px;
+      color: var(--text);
+      outline: none;
+    }
+
+    .admin-input:focus { border-color: rgba(255,255,255,0.22); }
+
+    .admin-select {
+      background: rgba(255,255,255,0.05);
+      border: 0.5px solid var(--border2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: 'Sora', sans-serif;
+      font-size: 12.5px;
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .admin-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: 'Sora', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0.5px solid var(--border2);
+      transition: background 0.12s;
+      white-space: nowrap;
+    }
+
+    .admin-btn.primary { background: rgba(255,255,255,0.1); color: var(--text); border-color: rgba(255,255,255,0.2); }
+    .admin-btn.primary:hover { background: rgba(255,255,255,0.16); }
+    .admin-btn.danger { background: rgba(224,85,85,0.1); color: #e05555; border-color: rgba(224,85,85,0.25); }
+    .admin-btn.danger:hover { background: rgba(224,85,85,0.18); }
+    .admin-btn.success { background: rgba(62,180,137,0.1); color: #3EB489; border-color: rgba(62,180,137,0.25); }
+    .admin-btn.success:hover { background: rgba(62,180,137,0.18); }
+    .admin-btn.small { padding: 4px 10px; font-size: 11px; }
+
+    .codes-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    .codes-table th {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 0.5px solid var(--border);
+      color: var(--text3);
+      font-weight: 500;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    .codes-table td {
+      padding: 10px 10px;
+      border-bottom: 0.5px solid var(--border);
+      color: var(--text2);
+      vertical-align: middle;
+    }
+
+    .codes-table tr:last-child td { border-bottom: none; }
+    .codes-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .code-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .tier-badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-weight: 500;
+    }
+
+    .tier-badge.casual { background: rgba(100,160,255,0.12); color: rgba(100,160,255,0.8); border: 0.5px solid rgba(100,160,255,0.2); }
+    .tier-badge.active { background: rgba(62,180,137,0.12); color: rgba(62,180,137,0.8); border: 0.5px solid rgba(62,180,137,0.2); }
+    .tier-badge.heavy { background: rgba(224,168,85,0.12); color: rgba(224,168,85,0.8); border: 0.5px solid rgba(224,168,85,0.2); }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+    }
+
+    .status-dot.active { background: #3EB489; }
+    .status-dot.inactive { background: rgba(255,255,255,0.2); }
+
+    .usage-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .usage-bar {
+      width: 60px;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .usage-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: #3EB489;
+      transition: width 0.3s;
+    }
+
+    .usage-bar-fill.warn { background: #e0a855; }
+    .usage-bar-fill.danger { background: #e05555; }
+
+    .admin-actions-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .admin-enter-chat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 0.5px solid var(--border);
+      color: var(--text2);
+      font-size: 12px;
+      font-family: 'Sora', sans-serif;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .admin-enter-chat:hover { background: rgba(255,255,255,0.1); }
+
     /* ── MARKDOWN ── */
     .md-h1 { font-size: 18px; font-weight: 600; margin: 12px 0 6px; }
     .md-h2 { font-size: 15px; font-weight: 600; margin: 10px 0 5px; }
@@ -1116,6 +1436,78 @@
 
 
 
+<!-- Admin Panel -->
+<div class="admin-screen" id="adminScreen">
+  <div class="admin-topbar">
+    <div class="admin-title">
+      ⛩️ shrine
+      <span class="admin-badge">ADMIN</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div class="admin-enter-chat" onclick="enterChatAsAdmin()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h2v8H8M5 9l3-3-3-3M1 6h7"/></svg>
+        Enter chat
+      </div>
+      <button class="admin-btn danger small" onclick="adminLogout()">Log out</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+    <!-- Create code -->
+    <div>
+      <div class="admin-section-title">Create License Key</div>
+      <div class="admin-create">
+        <input class="admin-input" id="newCode" placeholder="Code (e.g. SHRINE-A7X2)" style="text-transform:uppercase;font-family:'DM Mono',monospace;"/>
+        <select class="admin-select" id="newTier">
+          <option value="casual">Casual — 20/day</option>
+          <option value="active">Active — 40/day</option>
+          <option value="heavy">Heavy — 80/day</option>
+        </select>
+        <input class="admin-input" id="newExpires" type="date" style="max-width:140px;"/>
+        <button class="admin-btn primary" onclick="adminCreateCode()">Create</button>
+      </div>
+      <div id="createMsg" style="font-size:11.5px;margin-top:6px;min-height:16px;color:#3EB489;"></div>
+    </div>
+
+    <!-- Codes table -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="admin-section-title" style="margin-bottom:0;">License Keys</div>
+        <button class="admin-btn primary small" onclick="loadCodes()">↻ Refresh</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="codes-table" id="codesTable">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Tier</th>
+              <th>Status</th>
+              <th>Expires</th>
+              <th>Today</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="codesBody">
+            <tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.2);padding:24px;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-logo">⛩️</div>
+  <div class="login-title">shrine</div>
+  <div class="login-subtitle">Enter your access code to continue</div>
+  <div class="login-box">
+    <input class="login-input" id="codeInput" placeholder="Access code" maxlength="16" onkeydown="if(event.key==='Enter') submitCode()"/>
+    <button class="login-btn" id="loginBtn" onclick="submitCode()">Enter Shrine</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
 <div class="app-shell">
 
 <!-- Sidebar -->
@@ -1199,6 +1591,7 @@
 
   <span class="shrine-logo">⛩️ shrine</span>
   <div class="topbar-actions">
+    <span class="usage-counter" id="usageCounter" style="display:none"></span>
     <span class="convo-name" id="convoName">New conversation</span>
     <button class="topbar-icon-btn" onclick="openSystemPrompt()" title="Custom instructions">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
@@ -1313,8 +1706,225 @@
   let currentConvoId = null;
   let systemPrompt = localStorage.getItem('shrine_system_prompt') || '';
   let abortController = null;
+  let accessCode = localStorage.getItem('shrine_access_code') || '';
+  let userTier = localStorage.getItem('shrine_tier') || '';
+  let dailyUsed = 0;
+  let dailyLimit = 0;
 
-  // ── Stop generation ──
+  // ── Admin ──
+  const ADMIN_KEY = 'k3F9xLm2Qa7pZ8vT';
+  let isAdmin = false;
+
+  function adminHeaders() {
+    return { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY };
+  }
+
+  async function loadCodes() {
+    const tbody = document.getElementById('codesBody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.2);padding:24px;">Loading...</td></tr>';
+    try {
+      const res = await fetch('https://shrine-server-production.up.railway.app/admin/codes', { headers: adminHeaders() });
+      const codes = await res.json();
+      if (!Array.isArray(codes)) throw new Error('Bad response');
+      if (codes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:rgba(255,255,255,0.2);padding:24px;">No codes yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = codes.map(c => {
+        const pct = c.todayUsage / c.limit;
+        const barClass = pct >= 1 ? 'danger' : pct >= 0.8 ? 'warn' : '';
+        const expired = new Date(c.expires) < new Date();
+        return `<tr>
+          <td><span class="code-tag">${c.code}</span></td>
+          <td><span class="tier-badge ${c.tier}">${c.tier}</span></td>
+          <td><span class="status-dot ${c.active && !expired ? 'active' : 'inactive'}"></span>${expired ? 'Expired' : c.active ? 'Active' : 'Revoked'}</td>
+          <td>${c.expires}</td>
+          <td>
+            <div class="usage-bar-wrap">
+              <div class="usage-bar"><div class="usage-bar-fill ${barClass}" style="width:${Math.min(pct*100,100)}%"></div></div>
+              <span style="font-size:11px;font-family:'DM Mono',monospace;">${c.todayUsage}/${c.limit}</span>
+            </div>
+          </td>
+          <td>
+            <div class="admin-actions-row">
+              <select class="admin-select" style="padding:4px 8px;font-size:11px;" onchange="adminUpgrade('${c.code}',this.value)">
+                <option value="">Tier</option>
+                <option value="casual">Casual</option>
+                <option value="active">Active</option>
+                <option value="heavy">Heavy</option>
+              </select>
+              <button class="admin-btn small ${c.active ? 'danger' : 'success'}" onclick="adminToggle('${c.code}',${!c.active})">${c.active ? 'Revoke' : 'Restore'}</button>
+              <button class="admin-btn small primary" onclick="adminResetUsage('${c.code}')">Reset</button>
+              <button class="admin-btn small danger" onclick="adminDelete('${c.code}')">Delete</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    } catch {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#e05555;padding:24px;">Failed to load</td></tr>';
+    }
+  }
+
+  async function adminCreateCode() {
+    const code = document.getElementById('newCode').value.trim().toUpperCase();
+    const tier = document.getElementById('newTier').value;
+    const expires = document.getElementById('newExpires').value;
+    const msg = document.getElementById('createMsg');
+    if (!code || !expires) { msg.style.color = '#e05555'; msg.textContent = 'Fill in code and expiry date'; return; }
+    try {
+      const res = await fetch('https://shrine-server-production.up.railway.app/admin/codes', {
+        method: 'POST', headers: adminHeaders(),
+        body: JSON.stringify({ code, tier, expires })
+      });
+      const data = await res.json();
+      if (data.success) {
+        msg.style.color = '#3EB489';
+        msg.textContent = `✓ ${code} created`;
+        document.getElementById('newCode').value = '';
+        document.getElementById('newExpires').value = '';
+        loadCodes();
+      } else {
+        msg.style.color = '#e05555';
+        msg.textContent = data.error || 'Failed';
+      }
+    } catch { msg.style.color = '#e05555'; msg.textContent = 'Connection error'; }
+  }
+
+  async function adminToggle(code, active) {
+    await fetch(`https://shrine-server-production.up.railway.app/admin/codes/${code}`, {
+      method: 'PATCH', headers: adminHeaders(),
+      body: JSON.stringify({ active })
+    });
+    loadCodes();
+  }
+
+  async function adminUpgrade(code, tier) {
+    if (!tier) return;
+    await fetch(`https://shrine-server-production.up.railway.app/admin/codes/${code}`, {
+      method: 'PATCH', headers: adminHeaders(),
+      body: JSON.stringify({ tier })
+    });
+    loadCodes();
+  }
+
+  async function adminResetUsage(code) {
+    await fetch(`https://shrine-server-production.up.railway.app/admin/reset/${code}`, {
+      method: 'POST', headers: adminHeaders()
+    });
+    loadCodes();
+  }
+
+  async function adminDelete(code) {
+    if (!confirm(`Delete ${code}? This cannot be undone.`)) return;
+    await fetch(`https://shrine-server-production.up.railway.app/admin/codes/${code}`, {
+      method: 'DELETE', headers: adminHeaders()
+    });
+    loadCodes();
+  }
+
+  function enterChatAsAdmin() {
+    document.getElementById('adminScreen').classList.remove('open');
+  }
+
+  function adminLogout() {
+    isAdmin = false;
+    localStorage.removeItem('shrine_access_code');
+    localStorage.removeItem('shrine_tier');
+    accessCode = '';
+    userTier = '';
+    document.getElementById('adminScreen').classList.remove('open');
+    document.getElementById('loginScreen').classList.remove('hidden');
+  }
+  async function submitCode() {
+    const input = document.getElementById('codeInput');
+    const btn = document.getElementById('loginBtn');
+    const errorEl = document.getElementById('loginError');
+    const code = input.value.trim();
+    if (!code) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+    errorEl.textContent = '';
+    input.classList.remove('error');
+
+    // Admin key — bypass server call
+    if (code === ADMIN_KEY) {
+      isAdmin = true;
+      accessCode = code;
+      userTier = 'admin';
+      localStorage.setItem('shrine_access_code', code);
+      localStorage.setItem('shrine_tier', 'admin');
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('adminScreen').classList.add('open');
+      initApp();
+      loadCodes();
+      const d = new Date(); d.setMonth(d.getMonth() + 3);
+      document.getElementById('newExpires').value = d.toISOString().split('T')[0];
+      return;
+    }
+
+    try {
+      const res = await fetch('https://shrine-server-production.up.railway.app/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.toUpperCase() })
+      });
+      const data = await res.json();
+
+      if (data.valid) {
+        accessCode = code.toUpperCase();
+        userTier = data.tier;
+        localStorage.setItem('shrine_access_code', accessCode);
+        localStorage.setItem('shrine_tier', data.tier);
+        document.getElementById('loginScreen').classList.add('hidden');
+        initApp();
+      } else {
+        input.classList.add('error');
+        errorEl.textContent = data.reason || 'Invalid code';
+        btn.disabled = false;
+        btn.textContent = 'Enter Shrine';
+      }
+    } catch (err) {
+      errorEl.textContent = 'Connection error. Try again.';
+      btn.disabled = false;
+      btn.textContent = 'Enter Shrine';
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('shrine_access_code');
+    localStorage.removeItem('shrine_tier');
+    accessCode = '';
+    userTier = '';
+    location.reload();
+  }
+
+  function updateUsageCounter(used, limit) {
+    dailyUsed = used;
+    dailyLimit = limit;
+    const el = document.getElementById('usageCounter');
+    if (!el) return;
+    el.style.display = '';
+    el.textContent = `${used}/${limit}`;
+    el.className = 'usage-counter';
+    const pct = used / limit;
+    if (pct >= 1) el.classList.add('danger');
+    else if (pct >= 0.8) el.classList.add('warning');
+  }
+
+  function initApp() {
+    document.getElementById('webSearchToggle').classList.add('checked');
+    currentConvoId = 'convo_' + Date.now();
+    renderConvoList();
+    // Fetch current usage
+    fetch('https://shrine-server-production.up.railway.app/usage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-shrine-key': 'shrine_xk92mzp4' },
+      body: JSON.stringify({ code: accessCode })
+    }).then(r => r.json()).then(d => {
+      if (d.used !== undefined) updateUsageCounter(d.used, d.limit);
+    }).catch(() => {});
+  }
   function stopGeneration() {
     if (abortController) { abortController.abort(); abortController = null; }
     document.getElementById('stopBtn').classList.remove('visible');
@@ -1527,9 +2137,40 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('webSearchToggle').classList.add('checked');
-    currentConvoId = 'convo_' + Date.now();
-    renderConvoList();
+    // Check if already logged in
+    if (accessCode) {
+      // Admin returning
+      if (accessCode === ADMIN_KEY) {
+        isAdmin = true;
+        userTier = 'admin';
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('adminScreen').classList.add('open');
+        initApp();
+        loadCodes();
+        const d = new Date(); d.setMonth(d.getMonth() + 3);
+        document.getElementById('newExpires').value = d.toISOString().split('T')[0];
+        return;
+      }
+      fetch('https://shrine-server-production.up.railway.app/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: accessCode })
+      }).then(r => r.json()).then(d => {
+        if (d.valid) {
+          userTier = d.tier;
+          document.getElementById('loginScreen').classList.add('hidden');
+          initApp();
+        } else {
+          localStorage.removeItem('shrine_access_code');
+          localStorage.removeItem('shrine_tier');
+          accessCode = '';
+        }
+      }).catch(() => {
+        // If server unreachable, let them in with cached code
+        document.getElementById('loginScreen').classList.add('hidden');
+        initApp();
+      });
+    }
 
     // ── Paste image from clipboard ──
     document.getElementById('msgInput').addEventListener('paste', async (e) => {
@@ -2011,7 +2652,7 @@
       const res = await fetch('https://shrine-server-production.up.railway.app/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-shrine-key': 'shrine_xk92mzp4' },
-        body: JSON.stringify({ model: selectedModel, messages: conversation, webSearch: webSearchEnabled, reasoningEffort: selectedReasoningEffort })
+        body: JSON.stringify({ model: selectedModel, messages: buildMessages(), webSearch: webSearchEnabled, reasoningEffort: selectedReasoningEffort, code: accessCode })
       });
 
       const reader = res.body.getReader();
@@ -2068,6 +2709,8 @@
             }
           }
           if (eventName === 'error') { removeTyping(); appendMessage('ai', `⚠️ ${payload.message}`); }
+          if (eventName === 'usage') updateUsageCounter(payload.used, payload.limit);
+          if (eventName === 'limit') { removeTyping(); appendMessage('ai', `⚠️ Daily limit reached (${payload.limit} messages). Resets at midnight.`); }
         }
       };
 
@@ -2363,7 +3006,8 @@
           model: selectedModel,
           messages: buildMessages(),
           webSearch: webSearchEnabled,
-          reasoningEffort: selectedReasoningEffort
+          reasoningEffort: selectedReasoningEffort,
+          code: accessCode
         })
       });
 
