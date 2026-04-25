@@ -216,11 +216,6 @@ app.post('/chat', async (req, res) => {
   res.flushHeaders();
 
   const usagePayload = { used: usage.used, limit: usage.limit };
-  let usageSent = false;
-
-  function sendUsageOnce() {
-    if (!usageSent) { usageSent = true; sse(res, 'usage', usagePayload); }
-  }
 
   try {
     if (useResponsesAPI) {
@@ -239,7 +234,6 @@ app.post('/chat', async (req, res) => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-      sendUsageOnce();
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -254,7 +248,10 @@ app.post('/chat', async (req, res) => {
             if (evt.type === 'response.web_search_call.in_progress') sse(res, 'searching', {});
             if (evt.type === 'response.web_search_call.completed') sse(res, 'searched', {});
             if (evt.type === 'response.output_text.delta') sse(res, 'delta', { text: evt.delta });
-            if (evt.type === 'response.completed') sse(res, 'done', {});
+            if (evt.type === 'response.completed') {
+              sse(res, 'usage', usagePayload);
+              sse(res, 'done', {});
+            }
           } catch {}
         }
       }
@@ -274,7 +271,6 @@ app.post('/chat', async (req, res) => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-      sendUsageOnce();
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -283,7 +279,11 @@ app.post('/chat', async (req, res) => {
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const raw = line.slice(6).trim();
-          if (raw === '[DONE]') { sse(res, 'done', {}); continue; }
+          if (raw === '[DONE]') {
+            sse(res, 'usage', usagePayload);
+            sse(res, 'done', {});
+            continue;
+          }
           try {
             const evt = JSON.parse(raw);
             const delta = evt.choices?.[0]?.delta?.content;
