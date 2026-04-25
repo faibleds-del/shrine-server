@@ -13,9 +13,7 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
-// ── Daily usage (in-memory, resets naturally each day) ──
-const dailyUsage = {};
-
+// ── Daily usage (stored in codes table via usage_date + usage_count) ──
 const TIER_LIMITS = { casual: 20, active: 40, heavy: 80 };
 const ADMIN_KEY = 'k3F9xLm2Qa7pZ8vT';
 
@@ -32,24 +30,27 @@ async function validateCode(code) {
   return { valid: true, tier: data.tier, expires: data.expires };
 }
 
-function checkDailyLimit(code, tier) {
+async function checkDailyLimit(code, tier) {
   const today = new Date().toISOString().split('T')[0];
-  if (!dailyUsage[code] || dailyUsage[code].date !== today) {
-    dailyUsage[code] = { date: today, count: 0 };
-  }
   const limit = TIER_LIMITS[tier] || 20;
-  if (dailyUsage[code].count >= limit) {
-    return { allowed: false, used: dailyUsage[code].count, limit };
-  }
-  return { allowed: true, used: dailyUsage[code].count, limit };
+  const { data } = await supabase.from('codes').select('usage_date, usage_count').eq('code', code).single();
+  if (!data || data.usage_date !== today) return { allowed: true, used: 0, limit };
+  if (data.usage_count >= limit) return { allowed: false, used: data.usage_count, limit };
+  return { allowed: true, used: data.usage_count, limit };
 }
 
-function incrementUsage(code) {
+async function incrementUsage(code) {
   const today = new Date().toISOString().split('T')[0];
-  if (!dailyUsage[code] || dailyUsage[code].date !== today) {
-    dailyUsage[code] = { date: today, count: 0 };
-  }
-  dailyUsage[code].count++;
+  const { data } = await supabase.from('codes').select('usage_date, usage_count').eq('code', code).single();
+  const newCount = (data?.usage_date === today ? (data.usage_count || 0) : 0) + 1;
+  await supabase.from('codes').update({ usage_date: today, usage_count: newCount }).eq('code', code);
+}
+
+async function getUsageCount(code) {
+  const today = new Date().toISOString().split('T')[0];
+  const { data } = await supabase.from('codes').select('usage_date, usage_count').eq('code', code).single();
+  if (!data || data.usage_date !== today) return 0;
+  return data.usage_count || 0;
 }
 
 // ── Middleware ──
@@ -86,7 +87,7 @@ app.get('/admin/codes', requireAdmin, async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   res.json(data.map(c => ({
     ...c,
-    todayUsage: dailyUsage[c.code]?.date === today ? dailyUsage[c.code].count : 0,
+    todayUsage: c.usage_date === today ? (c.usage_count || 0) : 0,
     limit: TIER_LIMITS[c.tier] || 20
   })));
 });
@@ -120,9 +121,9 @@ app.delete('/admin/codes/:code', requireAdmin, async (req, res) => {
 });
 
 // ── Admin: reset daily usage ──
-app.post('/admin/reset/:code', requireAdmin, (req, res) => {
+app.post('/admin/reset/:code', requireAdmin, async (req, res) => {
   const code = req.params.code.toUpperCase();
-  if (dailyUsage[code]) delete dailyUsage[code];
+  await supabase.from('codes').update({ usage_date: null, usage_count: 0 }).eq('code', code);
   res.json({ success: true });
 });
 
@@ -142,7 +143,7 @@ app.post('/usage', async (req, res) => {
   if (code.trim() === ADMIN_KEY) return res.json({ used: 0, limit: 9999, tier: 'admin' });
   const validation = await validateCode(code.trim().toUpperCase());
   if (!validation.valid) return res.status(403).json({ error: validation.reason });
-  const usage = checkDailyLimit(code.trim().toUpperCase(), validation.tier);
+  const usage = await checkDailyLimit(code.trim().toUpperCase(), validation.tier);
   res.json({ used: usage.used, limit: usage.limit, tier: validation.tier });
 });
 
@@ -192,7 +193,7 @@ app.post('/chat', async (req, res) => {
     return res.end();
   }
 
-  const usage = isAdmin ? { allowed: true, used: 0, limit: 9999 } : checkDailyLimit(code.trim().toUpperCase(), validation.tier);
+  const usage = isAdmin ? { allowed: true, used: 0, limit: 9999 } : await checkDailyLimit(code.trim().toUpperCase(), validation.tier);
 
   if (!usage.allowed) {
     res.setHeader('Content-Type', 'text/event-stream');
@@ -201,7 +202,7 @@ app.post('/chat', async (req, res) => {
     return res.end();
   }
 
-  if (!isAdmin) incrementUsage(code.trim().toUpperCase());
+  if (!isAdmin) await incrementUsage(code.trim().toUpperCase());
 
   const useResponsesAPI = webSearch && !hasImages(messages);
 
