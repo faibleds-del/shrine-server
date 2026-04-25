@@ -2029,15 +2029,17 @@
   let abortController = null;
   let accessCode = localStorage.getItem('shrine_access_code') || '';
   let userTier = localStorage.getItem('shrine_tier') || '';
+  let sessionToken = localStorage.getItem('shrine_session_token') || '';
   let dailyUsed = 0;
   let dailyLimit = parseInt(localStorage.getItem('shrine_daily_limit') || '0');
-
-  // ── Admin ──
-  const ADMIN_KEY = 'k3F9xLm2Qa7pZ8vT';
   let isAdmin = false;
 
+  function authHeaders() {
+    return { 'Content-Type': 'application/json', 'x-shrine-key': 'shrine_xk92mzp4' };
+  }
+
   function adminHeaders() {
-    return { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY };
+    return { 'Content-Type': 'application/json', 'x-admin-token': sessionToken };
   }
 
   async function loadCodes() {
@@ -2068,6 +2070,9 @@
           </td>
           <td>
             <div class="admin-actions-row">
+              <div class="admin-action-btn" title="Login as this user" onclick="adminLoginAs('${c.code}')">
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2h2v7H7M4 8l3-3-3-3M1 5.5h6"/></svg>
+              </div>
               <select class="admin-select" style="padding:4px 8px;font-size:11px;" onchange="adminUpgrade('${c.code}',this.value)">
                 <option value="">Tier</option>
                 <option value="casual">Casual</option>
@@ -2147,6 +2152,31 @@
     document.getElementById('adminScreen').classList.remove('open');
   }
 
+  async function adminLoginAs(code) {
+    try {
+      const res = await fetch('https://shrine-server-production.up.railway.app/admin/loginas', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ code })
+      });
+      const data = await res.json();
+      if (!data.valid) return alert('Failed: ' + (data.error || 'unknown error'));
+
+      // Store new session as that user
+      sessionToken = data.token;
+      accessCode = data.code;
+      userTier = data.tier;
+      isAdmin = false;
+      localStorage.setItem('shrine_session_token', data.token);
+      localStorage.setItem('shrine_access_code', data.code);
+      localStorage.setItem('shrine_tier', data.tier);
+
+      // Close admin panel, open chat
+      document.getElementById('adminScreen').classList.remove('open');
+      initApp();
+    } catch { alert('Connection error'); }
+  }
+
   function adminLogout() {
     isAdmin = false;
     localStorage.removeItem('shrine_access_code');
@@ -2168,37 +2198,34 @@
     errorEl.textContent = '';
     input.classList.remove('error');
 
-    // Admin key — bypass server call
-    if (code === ADMIN_KEY) {
-      isAdmin = true;
-      accessCode = code;
-      userTier = 'admin';
-      localStorage.setItem('shrine_access_code', code);
-      localStorage.setItem('shrine_tier', 'admin');
-      document.getElementById('loginScreen').classList.add('hidden');
-      document.getElementById('adminScreen').classList.add('open');
-      initApp();
-      loadCodes();
-      const d = new Date(); d.setMonth(d.getMonth() + 3);
-      document.getElementById('newExpires').value = d.toISOString().split('T')[0];
-      return;
-    }
-
     try {
-      const res = await fetch('https://shrine-server-production.up.railway.app/validate', {
+      const res = await fetch('https://shrine-server-production.up.railway.app/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code.toUpperCase() })
+        body: JSON.stringify({ code })
       });
       const data = await res.json();
 
       if (data.valid) {
-        accessCode = code.toUpperCase();
+        sessionToken = data.token;
+        accessCode = code;
         userTier = data.tier;
-        localStorage.setItem('shrine_access_code', accessCode);
+        localStorage.setItem('shrine_session_token', data.token);
+        localStorage.setItem('shrine_access_code', code);
         localStorage.setItem('shrine_tier', data.tier);
-        document.getElementById('loginScreen').classList.add('hidden');
-        initApp();
+
+        if (data.tier === 'admin') {
+          isAdmin = true;
+          document.getElementById('loginScreen').classList.add('hidden');
+          document.getElementById('adminScreen').classList.add('open');
+          initApp();
+          loadCodes();
+          const d = new Date(); d.setMonth(d.getMonth() + 3);
+          document.getElementById('newExpires').value = d.toISOString().split('T')[0];
+        } else {
+          document.getElementById('loginScreen').classList.add('hidden');
+          initApp();
+        }
       } else {
         input.classList.add('error');
         errorEl.textContent = data.reason || 'Invalid code';
@@ -2215,8 +2242,11 @@
   function logout() {
     localStorage.removeItem('shrine_access_code');
     localStorage.removeItem('shrine_tier');
+    localStorage.removeItem('shrine_session_token');
+    localStorage.removeItem('shrine_daily_limit');
     accessCode = '';
     userTier = '';
+    sessionToken = '';
     location.reload();
   }
 
@@ -2241,6 +2271,7 @@
     currentConvoId = 'convo_' + Date.now();
     renderConvoList();
     startUsagePolling();
+    updateModelDropdownForTier();
     // Fetch current usage
     fetch('https://shrine-server-production.up.railway.app/usage', {
       method: 'POST',
@@ -2455,6 +2486,32 @@
     else renderConvoList();
   }
 
+  function updateModelDropdownForTier() {    const allowed = {
+      casual: ['gpt-5.4-nano'],
+      active: ['gpt-5.4-nano'],
+      heavy:  ['gpt-5.4-nano', 'gpt-5.3-chat-latest', 'gpt-5.4'],
+      admin:  ['gpt-5.4-nano', 'gpt-5.3-chat-latest', 'gpt-5.4']
+    }[userTier] || ['gpt-5.4-nano'];
+
+    document.querySelectorAll('.model-option').forEach(opt => {
+      const model = opt.dataset.model;
+      if (!allowed.includes(model)) {
+        opt.classList.add('locked');
+        let badge = opt.querySelector('.tier-lock-badge');
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'tier-lock-badge coming-soon-badge';
+          badge.textContent = 'Heavy';
+          opt.appendChild(badge);
+        }
+      } else {
+        opt.classList.remove('locked');
+        const badge = opt.querySelector('.tier-lock-badge');
+        if (badge) badge.remove();
+      }
+    });
+  }
+
   function toggleIncognito() {
     isIncognito = !isIncognito;
     convoTitled = false;
@@ -2508,39 +2565,36 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    // Check if already logged in
-    if (accessCode) {
-      // Admin returning
-      if (accessCode === ADMIN_KEY) {
+    // Check if already logged in via session token
+    if (sessionToken && accessCode) {
+      if (userTier === 'admin') {
         isAdmin = true;
-        userTier = 'admin';
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('adminScreen').classList.add('open');
         initApp();
         loadCodes();
         const d = new Date(); d.setMonth(d.getMonth() + 3);
         document.getElementById('newExpires').value = d.toISOString().split('T')[0];
-        return;
-      }
-      fetch('https://shrine-server-production.up.railway.app/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: accessCode })
-      }).then(r => r.json()).then(d => {
-        if (d.valid) {
-          userTier = d.tier;
+      } else {
+        // Validate session still works
+        fetch('https://shrine-server-production.up.railway.app/usage', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ code: accessCode })
+        }).then(r => r.json()).then(d => {
+          if (d.error) {
+            localStorage.removeItem('shrine_session_token');
+            localStorage.removeItem('shrine_access_code');
+            localStorage.removeItem('shrine_tier');
+          } else {
+            document.getElementById('loginScreen').classList.add('hidden');
+            initApp();
+          }
+        }).catch(() => {
           document.getElementById('loginScreen').classList.add('hidden');
           initApp();
-        } else {
-          localStorage.removeItem('shrine_access_code');
-          localStorage.removeItem('shrine_tier');
-          accessCode = '';
-        }
-      }).catch(() => {
-        // If server unreachable, let them in with cached code
-        document.getElementById('loginScreen').classList.add('hidden');
-        initApp();
-      });
+        });
+      }
     }
 
     // ── Paste image from clipboard ──
@@ -3406,7 +3460,7 @@
         signal: abortController.signal,
         headers: {
           'Content-Type': 'application/json',
-          'x-shrine-key': 'shrine_xk92mzp4'
+          ...authHeaders()
         },
         body: JSON.stringify({
           model: selectedModel,
