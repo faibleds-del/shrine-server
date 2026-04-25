@@ -2224,9 +2224,9 @@
     dailyUsed = used;
     dailyLimit = limit;
     if (limit && limit > 0) localStorage.setItem('shrine_daily_limit', limit);
+    if (userTier === 'admin') return;
     const el = document.getElementById('usageCounter');
     if (!el) return;
-    if (userTier === 'admin') { el.style.display = 'none'; return; }
     el.style.display = '';
     el.textContent = `${used}/${limit}`;
     el.className = 'usage-counter';
