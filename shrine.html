@@ -3064,6 +3064,8 @@
             streamBubble.innerHTML = renderMarkdown(fullReply);
             area.scrollTop = area.scrollHeight;
           }
+          if (eventName === 'error') { removeTyping(); appendMessage('ai', `⚠️ ${payload.message}`); }
+          if (eventName === 'limit') { removeTyping(); openUpgradeModal(); }
           if (eventName === 'done') {
             removeTyping();
             if (fullReply) {
@@ -3075,10 +3077,15 @@
               }
               saveConvo();
             }
+            // Fetch real usage from server after response completes
+            fetch('https://shrine-server-production.up.railway.app/usage', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-shrine-key': 'shrine_xk92mzp4' },
+              body: JSON.stringify({ code: accessCode })
+            }).then(r => r.json()).then(d => {
+              if (d.used !== undefined) updateUsageCounter(d.used, d.limit);
+            }).catch(() => {});
           }
-          if (eventName === 'error') { removeTyping(); appendMessage('ai', `⚠️ ${payload.message}`); }
-          if (eventName === 'usage') updateUsageCounter(payload.used, payload.limit);
-          if (eventName === 'limit') { removeTyping(); openUpgradeModal(); }
       }; // end dispatchSSE
 
       while (true) {
