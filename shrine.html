@@ -1890,6 +1890,73 @@
   <div class="drag-overlay-text">Drop to attach</div>
 </div>
 
+<!-- Upgrade Modal -->
+<div class="modal-overlay" id="upgradeModal" onclick="if(event.target===this)closeUpgradeModal()">
+  <div class="upgrade-modal" style="position:relative;">
+    <span class="upgrade-close" onclick="closeUpgradeModal()">×</span>
+    <div class="upgrade-header">
+      <div class="upgrade-icon">⛩️</div>
+      <div class="upgrade-title">You've hit your daily limit</div>
+      <div class="upgrade-subtitle">Your messages reset every day at midnight. Upgrade for more — or sit tight and we'll see you tomorrow.</div>
+    </div>
+
+    <div class="upgrade-tiers">
+      <!-- Casual -->
+      <div class="upgrade-tier">
+        <div class="upgrade-tier-name">Casual</div>
+        <div class="upgrade-tier-price">
+          <span class="upgrade-price-amount">$4</span>
+          <span class="upgrade-price-period">/ 3 months</span>
+        </div>
+        <div class="upgrade-tier-limit">20 messages / day</div>
+        <div class="upgrade-tier-perks">
+          <span class="upgrade-perk">Great for daily questions</span>
+          <span class="upgrade-perk">Web search included</span>
+          <span class="upgrade-perk">File & image uploads</span>
+          <span class="upgrade-perk">All AI models</span>
+        </div>
+      </div>
+
+      <!-- Active -->
+      <div class="upgrade-tier highlighted">
+        <div class="upgrade-tier-badge">MOST POPULAR</div>
+        <div class="upgrade-tier-name">Active</div>
+        <div class="upgrade-tier-price">
+          <span class="upgrade-price-amount">$7</span>
+          <span class="upgrade-price-period">/ 3 months</span>
+        </div>
+        <div class="upgrade-tier-limit">40 messages / day</div>
+        <div class="upgrade-tier-perks">
+          <span class="upgrade-perk">2x more than Casual</span>
+          <span class="upgrade-perk">Web search included</span>
+          <span class="upgrade-perk">File & image uploads</span>
+          <span class="upgrade-perk">All AI models</span>
+        </div>
+      </div>
+
+      <!-- Heavy -->
+      <div class="upgrade-tier">
+        <div class="upgrade-tier-name">Heavy</div>
+        <div class="upgrade-tier-price">
+          <span class="upgrade-price-amount">$15</span>
+          <span class="upgrade-price-period">/ 3 months</span>
+        </div>
+        <div class="upgrade-tier-limit">80 messages / day</div>
+        <div class="upgrade-tier-perks">
+          <span class="upgrade-perk">For power users</span>
+          <span class="upgrade-perk">Web search included</span>
+          <span class="upgrade-perk">File & image uploads</span>
+          <span class="upgrade-perk">All AI models</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="upgrade-footer">
+      To upgrade, reach out to whoever gave you your access code.
+    </div>
+  </div>
+</div>
+
 <!-- System Prompt Modal -->
 <div class="modal-overlay" id="systemPromptModal">
   <div class="modal">
@@ -2120,8 +2187,9 @@
     el.textContent = `${used}/${limit}`;
     el.className = 'usage-counter';
     const pct = used / limit;
-    if (pct >= 1) el.classList.add('danger');
-    else if (pct >= 0.8) el.classList.add('warning');
+    if (pct >= 1) { el.classList.add('danger'); el.style.cursor = 'pointer'; el.onclick = openUpgradeModal; }
+    else { el.style.cursor = 'default'; el.onclick = null; }
+    if (pct >= 0.8) el.classList.add('warning');
   }
 
   function initApp() {
@@ -2143,6 +2211,14 @@
   }
 
   // ── System prompt modal ──
+  function openUpgradeModal() {
+    document.getElementById('upgradeModal').classList.add('open');
+  }
+
+  function closeUpgradeModal() {
+    document.getElementById('upgradeModal').classList.remove('open');
+  }
+
   function openSystemPrompt() {
     document.getElementById('systemPromptInput').value = systemPrompt;
     document.getElementById('systemPromptModal').classList.add('open');
@@ -2947,7 +3023,7 @@
           }
           if (eventName === 'error') { removeTyping(); appendMessage('ai', `⚠️ ${payload.message}`); }
           if (eventName === 'usage') updateUsageCounter(payload.used, payload.limit);
-          if (eventName === 'limit') { removeTyping(); appendMessage('ai', `⚠️ Daily limit reached (${payload.limit} messages). Resets at midnight.`); }
+          if (eventName === 'limit') { removeTyping(); openUpgradeModal(); }
         }
       };
 
@@ -3209,6 +3285,12 @@
     const input = document.getElementById('msgInput');
     const text = input.value.trim();
     if (!text && pendingFiles.length === 0) return;
+
+    // Check limit before doing anything
+    if (userTier !== 'admin' && dailyLimit > 0 && dailyUsed >= dailyLimit) {
+      openUpgradeModal();
+      return;
+    }
 
     let userContent;
     if (pendingFiles.length > 0) {
