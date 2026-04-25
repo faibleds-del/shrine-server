@@ -8,6 +8,12 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    @media (min-width: 769px) {
+      html {
+        zoom: 1.75;
+      }
+    }
+
     :root {
       --bg: #1a1a1a;
       --bg2: #222222;
@@ -2234,11 +2240,6 @@
     document.getElementById('webSearchToggle').classList.add('checked');
     currentConvoId = 'convo_' + Date.now();
     renderConvoList();
-    // Hide upgrade button for admin
-    if (userTier === 'admin') {
-      const btn = document.getElementById('upgradeTopbarBtn');
-      if (btn) btn.style.display = 'none';
-    }
     // Fetch current usage
     fetch('https://shrine-server-production.up.railway.app/usage', {
       method: 'POST',
