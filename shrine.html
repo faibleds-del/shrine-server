@@ -3091,9 +3091,6 @@
     document.getElementById('stopBtn').classList.add('visible');
     showTyping();
 
-    // Optimistically update usage counter immediately
-    if (userTier !== 'admin') updateUsageCounter(dailyUsed + 1, dailyLimit);
-
     let fullReply = '';
     let streamBubble = null;
     let streamRow = null;
