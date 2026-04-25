@@ -30,6 +30,19 @@ async function validateCode(code) {
   return { valid: true, tier: data.tier, expires: data.expires };
 }
 
+async function checkAndIncrement(code, tier) {
+  const today = new Date().toISOString().split('T')[0];
+  const limit = TIER_LIMITS[tier] || 20;
+  const { data } = await supabase.from('codes').select('usage_date, usage_count').eq('code', code).single();
+
+  const currentCount = (data?.usage_date === today) ? (data.usage_count || 0) : 0;
+  if (currentCount >= limit) return { allowed: false, used: currentCount, limit };
+
+  const newCount = currentCount + 1;
+  await supabase.from('codes').update({ usage_date: today, usage_count: newCount }).eq('code', code);
+  return { allowed: true, used: newCount, limit };
+}
+
 async function checkDailyLimit(code, tier) {
   const today = new Date().toISOString().split('T')[0];
   const limit = TIER_LIMITS[tier] || 20;
@@ -37,13 +50,6 @@ async function checkDailyLimit(code, tier) {
   if (!data || data.usage_date !== today) return { allowed: true, used: 0, limit };
   if (data.usage_count >= limit) return { allowed: false, used: data.usage_count, limit };
   return { allowed: true, used: data.usage_count, limit };
-}
-
-async function incrementUsage(code) {
-  const today = new Date().toISOString().split('T')[0];
-  const { data } = await supabase.from('codes').select('usage_date, usage_count').eq('code', code).single();
-  const newCount = (data?.usage_date === today ? (data.usage_count || 0) : 0) + 1;
-  await supabase.from('codes').update({ usage_date: today, usage_count: newCount }).eq('code', code);
 }
 
 async function getUsageCount(code) {
@@ -193,7 +199,7 @@ app.post('/chat', async (req, res) => {
     return res.end();
   }
 
-  const usage = isAdmin ? { allowed: true, used: 0, limit: 9999 } : await checkDailyLimit(code.trim().toUpperCase(), validation.tier);
+  const usage = isAdmin ? { allowed: true, used: 0, limit: 9999 } : await checkAndIncrement(code.trim().toUpperCase(), validation.tier);
 
   if (!usage.allowed) {
     res.setHeader('Content-Type', 'text/event-stream');
@@ -201,8 +207,6 @@ app.post('/chat', async (req, res) => {
     sse(res, 'limit', { used: usage.used, limit: usage.limit });
     return res.end();
   }
-
-  if (!isAdmin) await incrementUsage(code.trim().toUpperCase());
 
   const useResponsesAPI = webSearch && !hasImages(messages);
 
