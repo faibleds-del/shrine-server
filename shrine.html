@@ -1772,7 +1772,7 @@
   let accessCode = localStorage.getItem('shrine_access_code') || '';
   let userTier = localStorage.getItem('shrine_tier') || '';
   let dailyUsed = 0;
-  let dailyLimit = 0;
+  let dailyLimit = parseInt(localStorage.getItem('shrine_daily_limit') || '0');
 
   // ── Admin ──
   const ADMIN_KEY = 'k3F9xLm2Qa7pZ8vT';
@@ -1965,8 +1965,10 @@
   function updateUsageCounter(used, limit) {
     dailyUsed = used;
     dailyLimit = limit;
+    if (limit && limit > 0) localStorage.setItem('shrine_daily_limit', limit);
     const el = document.getElementById('usageCounter');
     if (!el) return;
+    if (userTier === 'admin') { el.style.display = 'none'; return; }
     el.style.display = '';
     el.textContent = `${used}/${limit}`;
     el.className = 'usage-counter';
