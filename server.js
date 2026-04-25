@@ -1,53 +1,35 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// ── Code database (stored in a JSON file on Railway volume, or env var) ──
-// CODES env var format: JSON string of code objects
-// e.g. [{"code":"SHRINE-A7X2","tier":"casual","expires":"2026-07-24","active":true}]
-// Daily usage tracked in memory (resets on server restart, good enough)
-const dailyUsage = {}; // { "SHRINE-A7X2": { date: "2026-04-24", count: 0 } }
+// ── Supabase ──
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
-const TIER_LIMITS = {
-  casual: 20,
-  active: 40,
-  heavy: 80
-};
+// ── Daily usage (in-memory, resets naturally each day) ──
+const dailyUsage = {};
 
-const CODES_FILE = path.join(__dirname, 'codes.json');
+const TIER_LIMITS = { casual: 20, active: 40, heavy: 80 };
+const ADMIN_KEY = 'k3F9xLm2Qa7pZ8vT';
 
-function getCodes() {
-  try {
-    if (fs.existsSync(CODES_FILE)) {
-      return JSON.parse(fs.readFileSync(CODES_FILE, 'utf8'));
-    }
-    // Fall back to env var for initial seed
-    return JSON.parse(process.env.SHRINE_CODES || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function saveCodes(codes) {
-  try {
-    fs.writeFileSync(CODES_FILE, JSON.stringify(codes, null, 2));
-  } catch (err) {
-    console.error('Failed to save codes:', err);
-  }
-}
-
-function validateCode(code) {
-  const codes = getCodes();
-  const entry = codes.find(c => c.code === code);
-  if (!entry) return { valid: false, reason: 'Invalid code' };
-  if (!entry.active) return { valid: false, reason: 'Code deactivated' };
-  if (new Date(entry.expires) < new Date()) return { valid: false, reason: 'Code expired' };
-  return { valid: true, tier: entry.tier, expires: entry.expires };
+// ── Code helpers ──
+async function validateCode(code) {
+  const { data, error } = await supabase
+    .from('codes')
+    .select('*')
+    .eq('code', code)
+    .single();
+  if (error || !data) return { valid: false, reason: 'Invalid code' };
+  if (!data.active) return { valid: false, reason: 'Code deactivated' };
+  if (new Date(data.expires) < new Date()) return { valid: false, reason: 'Code expired' };
+  return { valid: true, tier: data.tier, expires: data.expires };
 }
 
 function checkDailyLimit(code, tier) {
@@ -70,16 +52,15 @@ function incrementUsage(code) {
   dailyUsage[code].count++;
 }
 
-// ── Auth middleware ──
+// ── Middleware ──
 app.use((req, res, next) => {
-  if (req.path === '/' || req.path === '/validate' || req.path === '/admin/login' || req.path.startsWith('/admin/')) return next();
+  const open = ['/', '/validate', '/admin/login'];
+  if (open.includes(req.path) || req.path.startsWith('/admin/')) return next();
   if (req.headers['x-shrine-key'] !== process.env.SHRINE_SECRET) {
     return res.status(403).json({ error: 'Unauthorized' });
   }
   next();
 });
-
-const ADMIN_KEY = 'k3F9xLm2Qa7pZ8vT';
 
 function requireAdmin(req, res, next) {
   if (req.headers['x-admin-key'] !== ADMIN_KEY) {
@@ -95,15 +76,15 @@ app.get('/', (req, res) => {
 
 // ── Admin: login ──
 app.post('/admin/login', (req, res) => {
-  const { key } = req.body;
-  res.json({ valid: key === ADMIN_KEY });
+  res.json({ valid: req.body.key === ADMIN_KEY });
 });
 
 // ── Admin: list codes ──
-app.get('/admin/codes', requireAdmin, (req, res) => {
-  const codes = getCodes();
+app.get('/admin/codes', requireAdmin, async (req, res) => {
+  const { data, error } = await supabase.from('codes').select('*').order('created_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
   const today = new Date().toISOString().split('T')[0];
-  res.json(codes.map(c => ({
+  res.json(data.map(c => ({
     ...c,
     todayUsage: dailyUsage[c.code]?.date === today ? dailyUsage[c.code].count : 0,
     limit: TIER_LIMITS[c.tier] || 20
@@ -111,35 +92,30 @@ app.get('/admin/codes', requireAdmin, (req, res) => {
 });
 
 // ── Admin: create code ──
-app.post('/admin/codes', requireAdmin, (req, res) => {
+app.post('/admin/codes', requireAdmin, async (req, res) => {
   const { code, tier, expires } = req.body;
   if (!code || !tier || !expires) return res.status(400).json({ error: 'Missing fields' });
-  const codes = getCodes();
-  if (codes.find(c => c.code === code.toUpperCase())) return res.status(400).json({ error: 'Code already exists' });
-  codes.push({ code: code.toUpperCase(), tier, expires, active: true });
-  saveCodes(codes);
+  const { error } = await supabase.from('codes').insert({ code: code.toUpperCase(), tier, expires, active: true });
+  if (error) return res.status(400).json({ error: error.message });
   res.json({ success: true });
 });
 
 // ── Admin: update code ──
-app.patch('/admin/codes/:code', requireAdmin, (req, res) => {
-  const codes = getCodes();
-  const idx = codes.findIndex(c => c.code === req.params.code.toUpperCase());
-  if (idx === -1) return res.status(404).json({ error: 'Code not found' });
+app.patch('/admin/codes/:code', requireAdmin, async (req, res) => {
   const { tier, expires, active } = req.body;
-  if (tier !== undefined) codes[idx].tier = tier;
-  if (expires !== undefined) codes[idx].expires = expires;
-  if (active !== undefined) codes[idx].active = active;
-  saveCodes(codes);
-  res.json({ success: true, code: codes[idx] });
+  const updates = {};
+  if (tier !== undefined) updates.tier = tier;
+  if (expires !== undefined) updates.expires = expires;
+  if (active !== undefined) updates.active = active;
+  const { error } = await supabase.from('codes').update(updates).eq('code', req.params.code.toUpperCase());
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true });
 });
 
 // ── Admin: delete code ──
-app.delete('/admin/codes/:code', requireAdmin, (req, res) => {
-  const codes = getCodes();
-  const filtered = codes.filter(c => c.code !== req.params.code.toUpperCase());
-  if (filtered.length === codes.length) return res.status(404).json({ error: 'Code not found' });
-  saveCodes(filtered);
+app.delete('/admin/codes/:code', requireAdmin, async (req, res) => {
+  const { error } = await supabase.from('codes').delete().eq('code', req.params.code.toUpperCase());
+  if (error) return res.status(500).json({ error: error.message });
   res.json({ success: true });
 });
 
@@ -151,21 +127,20 @@ app.post('/admin/reset/:code', requireAdmin, (req, res) => {
 });
 
 // ── Validate access code ──
-app.post('/validate', (req, res) => {
+app.post('/validate', async (req, res) => {
   const { code } = req.body;
   if (!code) return res.status(400).json({ valid: false, reason: 'No code provided' });
-  // Admin code is always valid with unlimited tier
   if (code.trim() === ADMIN_KEY) return res.json({ valid: true, tier: 'admin', expires: '2099-12-31' });
-  const result = validateCode(code.trim().toUpperCase());
+  const result = await validateCode(code.trim().toUpperCase());
   res.json(result);
 });
 
-// ── Usage check endpoint ──
-app.post('/usage', (req, res) => {
+// ── Usage check ──
+app.post('/usage', async (req, res) => {
   const { code } = req.body;
   if (!code) return res.status(400).json({ error: 'No code' });
   if (code.trim() === ADMIN_KEY) return res.json({ used: 0, limit: 9999, tier: 'admin' });
-  const validation = validateCode(code.trim().toUpperCase());
+  const validation = await validateCode(code.trim().toUpperCase());
   if (!validation.valid) return res.status(403).json({ error: validation.reason });
   const usage = checkDailyLimit(code.trim().toUpperCase(), validation.tier);
   res.json({ used: usage.used, limit: usage.limit, tier: validation.tier });
@@ -207,9 +182,9 @@ function sse(res, event, data) {
 app.post('/chat', async (req, res) => {
   const { model, messages, webSearch, reasoningEffort, code } = req.body;
 
-  // Validate code — admin bypass
   const isAdmin = code && code.trim() === ADMIN_KEY;
-  const validation = isAdmin ? { valid: true, tier: 'admin' } : validateCode((code || '').trim().toUpperCase());
+  const validation = isAdmin ? { valid: true, tier: 'admin' } : await validateCode((code || '').trim().toUpperCase());
+
   if (!validation.valid) {
     res.setHeader('Content-Type', 'text/event-stream');
     res.flushHeaders();
@@ -217,8 +192,8 @@ app.post('/chat', async (req, res) => {
     return res.end();
   }
 
-  // Check daily limit — skip for admin
   const usage = isAdmin ? { allowed: true, used: 0, limit: 9999 } : checkDailyLimit(code.trim().toUpperCase(), validation.tier);
+
   if (!usage.allowed) {
     res.setHeader('Content-Type', 'text/event-stream');
     res.flushHeaders();
@@ -235,25 +210,18 @@ app.post('/chat', async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
 
-  // Send current usage after increment
-  sse(res, 'usage', { used: usage.used + 1, limit: usage.limit });
+  sse(res, 'usage', { used: usage.used + (isAdmin ? 0 : 1), limit: usage.limit });
 
   try {
     if (useResponsesAPI) {
       const convertedMessages = convertMessagesForResponsesAPI(messages);
       const response = await fetch('https://api.openai.com/v1/responses', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
         body: JSON.stringify({
-          model,
-          input: convertedMessages,
+          model, input: convertedMessages,
           tools: [{ type: 'web_search_preview' }],
-          tool_choice: 'auto',
-          stream: true,
-          max_output_tokens: 1024,
+          tool_choice: 'auto', stream: true, max_output_tokens: 1024,
           ...(reasoningEffort ? { reasoning: { effort: reasoningEffort } } : {})
         })
       });
@@ -261,13 +229,11 @@ app.post('/chat', async (req, res) => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
+        const lines = buffer.split('\n'); buffer = lines.pop();
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const raw = line.slice(6).trim();
@@ -287,15 +253,9 @@ app.post('/chat', async (req, res) => {
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
         body: JSON.stringify({
-          model,
-          messages,
-          stream: true,
-          max_completion_tokens: 1024,
+          model, messages, stream: true, max_completion_tokens: 1024,
           ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {})
         })
       });
@@ -303,13 +263,11 @@ app.post('/chat', async (req, res) => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
+        const lines = buffer.split('\n'); buffer = lines.pop();
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const raw = line.slice(6).trim();
