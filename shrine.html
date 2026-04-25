@@ -2240,6 +2240,7 @@
     document.getElementById('webSearchToggle').classList.add('checked');
     currentConvoId = 'convo_' + Date.now();
     renderConvoList();
+    startUsagePolling();
     // Fetch current usage
     fetch('https://shrine-server-production.up.railway.app/usage', {
       method: 'POST',
@@ -2249,6 +2250,19 @@
       if (d.used !== undefined) updateUsageCounter(d.used, d.limit);
     }).catch(() => {});
   }
+  function startUsagePolling() {
+    if (userTier === 'admin') return;
+    setInterval(() => {
+      fetch('https://shrine-server-production.up.railway.app/usage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-shrine-key': 'shrine_xk92mzp4' },
+        body: JSON.stringify({ code: accessCode })
+      }).then(r => r.json()).then(d => {
+        if (d.used !== undefined) updateUsageCounter(d.used, d.limit);
+      }).catch(() => {});
+    }, 3000);
+  }
+
   function stopGeneration() {
     if (abortController) { abortController.abort(); abortController = null; }
     document.getElementById('stopBtn').classList.remove('visible');
